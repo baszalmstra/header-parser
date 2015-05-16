@@ -4,6 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.4)
 SET(SOURCES
   "test.cc"
   "token.h"
+  "tokenizer.cc"
   "tokenizer.h"
   )
 
