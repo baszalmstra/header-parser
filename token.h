@@ -1,20 +1,20 @@
 #pragma once
 
 #include <cstdint>
-#include <array>
+#include <string>
 
 enum class TokenType
 {
   kNone,
   kSymbol,
   kIdentifier,
-  kKeyword,
   kConst
 };
 
 struct Token
 {
 	TokenType tokenType;
-  int32_t startPos;
-  int32_t startLine;
+  std::size_t startPos;
+  std::size_t startLine;
+  std::string token;
 };
