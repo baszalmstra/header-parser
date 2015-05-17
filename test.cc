@@ -2,8 +2,7 @@
 #include "token.h"
 #include <iostream>
 
-const char testContent[] = "#include <iostream> // henk is cool\n"
-    "int main() { return 0; }";
+const char testContent[] = "int main() { return 0; }";
 
 int main()
 {
@@ -20,6 +19,9 @@ int main()
         break;
       case TokenType::kSymbol:
         std::cout << "[Symbol] " << t.token << std::endl;
+        break;
+      case TokenType::kConst:
+        std::cout << "[Const ] " << t.token << std::endl;
         break;
       default:
         break;

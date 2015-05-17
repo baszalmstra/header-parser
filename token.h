@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <array>
 
 enum class TokenType
 {

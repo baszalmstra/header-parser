@@ -113,7 +113,9 @@ bool Tokenizer::GetToken(Token &token)
 {
   // Get the next character
   char c = NextLeadingChar();
+  char p = peek();
   std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
+  std::char_traits<char>::int_type intp = std::char_traits<char>::to_int_type(p);
 
   if(!std::char_traits<char>::not_eof(intc))
   {
@@ -128,7 +130,7 @@ bool Tokenizer::GetToken(Token &token)
   token.tokenType = TokenType::kNone;
 
   // Alphanumeric token
-  if(std::isalpha(intc) || c == '_')
+  if(std::isalpha(intc) || c == '_' || c == '#')
   {
     // Read the rest of the alphanumeric characters
     do
@@ -143,6 +145,66 @@ bool Tokenizer::GetToken(Token &token)
 
     // Set the type of the token
     token.tokenType = TokenType::kIdentifier;
+
+    return true;
+  }
+  // Constant
+  else if(std::isdigit(intc) || ((c == '-' || c == '+') && std::isdigit(intp)))
+  {
+    bool isFloat;
+    bool isHex;
+    do
+    {
+      if(c == '.')
+        isFloat = true;
+
+      if(c == 'x' || c == 'X')
+        isHex = true;
+
+      token.token.push_back(c);
+      c = NextChar();
+      intc = std::char_traits<char>::to_int_type(c);
+
+    } while(std::isdigit(intc) ||
+        (!isFloat && c == '.') ||
+        (!isHex && (c == 'X' || c == 'x')) ||
+        (isHex && std::isxdigit(intc)));
+
+    if(!isFloat || (c != 'f' && c != 'F'))
+      ResetChar();
+
+    token.tokenType = TokenType::kConst;
+
+    return true;
+  }
+  else if(c == '"')
+  {
+    c = NextChar();
+    while(c != '"' && std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
+    {
+      if(c == '\\')
+      {
+        c = NextChar();
+        if(!std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
+          break;
+        else if(c == 'n')
+          c = '\n';
+        else if(c == 't')
+          c = '\t';
+        else if(c == 'r')
+          c = '\r';
+        else if(c == '"')
+          c = '"';
+      }
+
+      token.token.push_back(c);
+      c = NextChar();
+    }
+
+    if(c != '"')
+      ResetChar();
+
+    token.tokenType = TokenType::kConst;
 
     return true;
   }
