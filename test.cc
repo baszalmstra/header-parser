@@ -11,18 +11,20 @@ int main(int argc, char** argv)
 {
   Tokenizer tokenizer;
 
+  std::stringstream buffer;
+
+  // Store content from file or test string
   if (argc > 1)
   {
     // Open from file
     std::ifstream t(argv[1]);
-    std::stringstream buffer;
     buffer << t.rdbuf();
-    tokenizer.Reset(buffer.str().c_str());
   }
   else
-  {
-      tokenizer.Reset(testContent);
-  }
+    buffer << testContent;
+
+  // Give the tokenizer the text
+  tokenizer.Reset(buffer.str().c_str());
 
   Token t;
   while(tokenizer.GetToken(t))
