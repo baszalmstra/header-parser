@@ -2,12 +2,27 @@
 #include "token.h"
 #include <iostream>
 
+#include <fstream>
+#include <sstream>
+
 const char testContent[] = "int main() { return 0; }";
 
-int main()
+int main(int argc, char** argv)
 {
-	Tokenizer tokenizer;
-  tokenizer.Reset(testContent);
+  Tokenizer tokenizer;
+
+  if (argc > 1)
+  {
+    // Open from file
+    std::ifstream t(argv[1]);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    tokenizer.Reset(buffer.str().c_str());
+  }
+  else
+  {
+      tokenizer.Reset(testContent);
+  }
 
   Token t;
   while(tokenizer.GetToken(t))
