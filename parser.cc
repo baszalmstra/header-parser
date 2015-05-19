@@ -69,10 +69,22 @@ void Parser::ParseDirective()
 
   bool multiLineEnabled = false;
   if(token.token == "define")
+  {
     multiLineEnabled = true;
+    std::cout << "Skipping directive: " << token.token << std::endl;
+  }
+  else if(token.token == "include")
+  {
+    Token includeToken;
+    GetToken(includeToken);
+
+    std::cout << "Parsed include directive: \"" << includeToken.token << "\"" << std::endl;
+  }
+  else
+    std::cout << "Skipping directive: " << token.token << std::endl;
 
   // Skip past the end of the token
-  char lastChar;
+  char lastChar = '\n';
   do
   {
     // Skip to the end of the line
@@ -83,14 +95,13 @@ void Parser::ParseDirective()
   } while(multiLineEnabled && lastChar == '\\');
 
   // DEBUG
-  std::cout << "Parsed directive: " << token.token << std::endl;
 }
 
 //--------------------------------------------------------------------------------------------------
 bool Parser::SkipDeclaration(Token &token)
 {
   // DEBUG
-  std::cout << "Skipping directive, start: " << token.token;
+  std::cout << "Skipping declaration, start: " << token.token;
 
   int32_t scopeDepth = 0;
   while(GetToken(token))
