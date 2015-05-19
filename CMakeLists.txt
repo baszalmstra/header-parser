@@ -6,7 +6,9 @@ SET(SOURCES
   "token.h"
   "tokenizer.cc"
   "tokenizer.h"
+  "parser.cc"
+  "parser.h"
   )
 
 ADD_DEFINITIONS(-std=c++11)
-ADD_EXECUTABLE(header-parser ${SOURCES})
+ADD_EXECUTABLE(header-parser ${SOURCES} parser.cc parser.h test.h)

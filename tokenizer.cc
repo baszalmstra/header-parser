@@ -32,7 +32,7 @@ void Tokenizer::Reset(const char* input, std::size_t startingLine)
 }
 
 //--------------------------------------------------------------------------------------------------
-char Tokenizer::NextChar()
+char Tokenizer::GetChar()
 {
   char c = input_[cursorPos_];
 
@@ -48,7 +48,7 @@ char Tokenizer::NextChar()
 }
 
 //--------------------------------------------------------------------------------------------------
-void Tokenizer::ResetChar()
+void Tokenizer::UngetChar()
 {
   cursorLine_ = prevCursorLine_;
   cursorPos_ = prevCursorPos_;
@@ -63,10 +63,10 @@ char Tokenizer::peek() const
 }
 
 //--------------------------------------------------------------------------------------------------
-char Tokenizer::NextLeadingChar()
+char Tokenizer::GetLeadingChar()
 {
   char c;
-  for(c = NextChar(); !is_eof(); c = NextChar())
+  for(c = GetChar(); !is_eof(); c = GetChar())
   {
     // If this is a whitespace character skip it
     std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
@@ -78,9 +78,9 @@ char Tokenizer::NextLeadingChar()
     if(c == '/' && next == '/')
     {
       // Search for the end of the line
-      for (c = NextChar();
+      for (c = GetChar();
            c != EndOfFileChar && c != '\n';
-           c = NextChar());
+           c = GetChar());
 
       // Go to the next
       continue;
@@ -90,13 +90,13 @@ char Tokenizer::NextLeadingChar()
     if(c == '/' && next == '*')
     {
       // Search for the end of the block comment
-      for (c = NextChar(), next = peek();
+      for (c = GetChar(), next = peek();
            c != EndOfFileChar && (c != '*' || next != '/');
-           c = NextChar(), next = peek());
+           c = GetChar(), next = peek());
 
       // Skip past the slash
       if(c != EndOfFileChar)
-        NextChar();
+        GetChar();
 
       // Move to the next character
       continue;
@@ -112,14 +112,14 @@ char Tokenizer::NextLeadingChar()
 bool Tokenizer::GetToken(Token &token)
 {
   // Get the next character
-  char c = NextLeadingChar();
+  char c = GetLeadingChar();
   char p = peek();
   std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
   std::char_traits<char>::int_type intp = std::char_traits<char>::to_int_type(p);
 
   if(!std::char_traits<char>::not_eof(intc))
   {
-    ResetChar();
+    UngetChar();
     return false;
   }
 
@@ -130,18 +130,18 @@ bool Tokenizer::GetToken(Token &token)
   token.tokenType = TokenType::kNone;
 
   // Alphanumeric token
-  if(std::isalpha(intc) || c == '_' || c == '#')
+  if(std::isalpha(intc) || c == '_')
   {
     // Read the rest of the alphanumeric characters
     do
     {
       token.token.push_back(c);
-      c = NextChar();
+      c = GetChar();
       intc = std::char_traits<char>::to_int_type(c);
     } while(std::isalnum(intc) || c == '_');
 
     // Put back the last read character since it's not part of the identifier
-    ResetChar();
+    UngetChar();
 
     // Set the type of the token
     token.tokenType = TokenType::kIdentifier;
@@ -162,7 +162,7 @@ bool Tokenizer::GetToken(Token &token)
         isHex = true;
 
       token.token.push_back(c);
-      c = NextChar();
+      c = GetChar();
       intc = std::char_traits<char>::to_int_type(c);
 
     } while(std::isdigit(intc) ||
@@ -171,7 +171,7 @@ bool Tokenizer::GetToken(Token &token)
         (isHex && std::isxdigit(intc)));
 
     if(!isFloat || (c != 'f' && c != 'F'))
-      ResetChar();
+      UngetChar();
 
     token.tokenType = TokenType::kConst;
 
@@ -179,12 +179,12 @@ bool Tokenizer::GetToken(Token &token)
   }
   else if(c == '"')
   {
-    c = NextChar();
+    c = GetChar();
     while(c != '"' && std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
     {
       if(c == '\\')
       {
-        c = NextChar();
+        c = GetChar();
         if(!std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
           break;
         else if(c == 'n')
@@ -198,11 +198,11 @@ bool Tokenizer::GetToken(Token &token)
       }
 
       token.token.push_back(c);
-      c = NextChar();
+      c = GetChar();
     }
 
     if(c != '"')
-      ResetChar();
+      UngetChar();
 
     token.tokenType = TokenType::kConst;
 
@@ -215,7 +215,7 @@ bool Tokenizer::GetToken(Token &token)
     token.token.push_back(c);
 
     #define PAIR(cc,dd) (c==cc&&d==dd) /* Comparison macro for two characters */
-    const char d = NextChar();
+    const char d = GetChar();
     if(PAIR('<', '<') ||
        PAIR('-', '>') ||
        PAIR('>', '>') ||
@@ -243,7 +243,7 @@ bool Tokenizer::GetToken(Token &token)
       token.token.push_back(d);
     }
     else
-      ResetChar();
+      UngetChar();
 
     token.tokenType = TokenType::kSymbol;
 
@@ -257,4 +257,68 @@ bool Tokenizer::GetToken(Token &token)
 bool Tokenizer::is_eof() const
 {
   return cursorPos_ >= inputLength_;
+}
+
+//--------------------------------------------------------------------------------------------------
+bool Tokenizer::GetIdentifier(Token &token)
+{
+  if(!GetToken(token))
+    return false;
+
+  if(token.tokenType == TokenType::kIdentifier)
+    return true;
+
+  UngetToken(token);
+  return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+void Tokenizer::UngetToken(const Token &token)
+{
+  cursorLine_ = token.startLine;
+  cursorPos_ = token.startPos;
+}
+
+//--------------------------------------------------------------------------------------------------
+bool Tokenizer::MatchIdentifier(const char *identifier)
+{
+  Token token;
+  if(GetToken(token))
+  {
+    if(token.tokenType == TokenType::kIdentifier && token.token == identifier)
+      return true;
+
+    UngetToken(token);
+  }
+
+  return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+bool Tokenizer::MatchSymbol(const char *symbol)
+{
+  Token token;
+  if(GetToken(token))
+  {
+    if(token.tokenType == TokenType::kSymbol && token.token == symbol)
+      return true;
+
+    UngetToken(token);
+  }
+
+  return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+void Tokenizer::RequireIdentifier(const char *identifier)
+{
+  if(!MatchIdentifier(identifier))
+    throw;
+}
+
+//--------------------------------------------------------------------------------------------------
+void Tokenizer::RequireSymbol(const char *symbol)
+{
+  if(!MatchSymbol(symbol))
+    throw;
 }

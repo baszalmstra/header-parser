@@ -1,16 +1,13 @@
-#include "tokenizer.h"
-#include "token.h"
+#include "parser.h"
 #include <iostream>
 
 #include <fstream>
 #include <sstream>
 
-const char testContent[] = "int main() { return 0; }";
+const char testContent[] = "#include <iostream>\nint main() { return 0; }";
 
 int main(int argc, char** argv)
 {
-  Tokenizer tokenizer;
-
   std::stringstream buffer;
 
   // Store content from file or test string
@@ -23,27 +20,8 @@ int main(int argc, char** argv)
   else
     buffer << testContent;
 
-  // Give the tokenizer the text
-  tokenizer.Reset(buffer.str().c_str());
-
-  Token t;
-  while(tokenizer.GetToken(t))
-  {
-    switch(t.tokenType)
-    {
-      case TokenType::kIdentifier:
-        std::cout << "[Identi] " << t.token << std::endl;
-        break;
-      case TokenType::kSymbol:
-        std::cout << "[Symbol] " << t.token << std::endl;
-        break;
-      case TokenType::kConst:
-        std::cout << "[Const ] " << t.token << std::endl;
-        break;
-      default:
-        break;
-    }
-  }
+  Parser parser;
+  parser.Parse(buffer.str().c_str());
 
 	return 0;
 }
