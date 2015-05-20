@@ -9,10 +9,10 @@
 R_ENUM()
 enum Numbers
 {
-  Zero = 0,
+  Zero,
   One,
   Two,
-  Three = 3
+  Three =0,
 };
 
 enum IgnoredNumbers
@@ -30,3 +30,16 @@ enum class CXX11Numbers : uint8_t
   Nine,
   Ten = 10
 };
+
+template<typename T, std::enable_if<has reflection>>
+void Serialize(Stream, const T& obj)
+{
+  // Use reflection
+
+}
+
+template<>
+void Serialize<Matrix>(stream, const Matrix &obj)
+{
+  // Custom code
+}

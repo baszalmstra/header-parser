@@ -22,6 +22,5 @@ int main(int argc, char** argv)
 
   Parser parser;
   parser.Parse(buffer.str().c_str());
-
 	return 0;
 }

@@ -15,7 +15,7 @@ I have found a lot of use cases for something like this. Some of these include:
 I plan to create several tools using this library to do the above.
 
 # Roadmap
-1. Create a simple tokenizer
-2. Use the tokenizer to find attributes
-3. Extract the source contents starting from the attribute
-4. Create an interface to call based on the extracted data
+- [x] Create a simple tokenizer
+- [x] Use the tokenizer to find attributes
+- [ ] Extract the source contents starting from the attribute
+- [ ] Create an interface to call based on the extracted data
