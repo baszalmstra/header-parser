@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "test.1.h"
+#include "test.h"
 
 R_ENUM()
 enum Numbers
@@ -15,31 +15,35 @@ enum Numbers
   Three =0,
 };
 
+R_CLASS()
+class HenkClass
+{
+  R_ENUM()
+  enum Numbers
+  {
+    Zero,
+    One,
+    Two,
+    Three =0,
+  };
+};
+
 enum IgnoredNumbers
 {
   Four = 4,
   Five,
 };
 
-R_ENUM()
-enum class CXX11Numbers : uint8_t
-{
-  Six,
-  Seven,
-  Eight,
-  Nine,
-  Ten = 10
-};
+namespace test {
 
-template<typename T, std::enable_if<has reflection>>
-void Serialize(Stream, const T& obj)
-{
-  // Use reflection
+  R_ENUM()
+  enum class CXX11Numbers : uint8_t
+  {
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten = 10
+  };
 
-}
-
-template<>
-void Serialize<Matrix>(stream, const Matrix &obj)
-{
-  // Custom code
 }

@@ -21,6 +21,11 @@ bool Parser::Parse(const char *input)
   // Pass the input to the tokenizer
   Reset(input);
 
+  // Reset scope
+  topScope_ = scopes_;
+  topScope_->name = "";
+  topScope_->type = ScopeType::kGlobal;
+
   // Parse all statements in the file
   while(ParseStatement())
   {
@@ -52,6 +57,10 @@ bool Parser::ParseDeclaration(Token &token)
     ; // Empty statement
   else if(token.token == "R_ENUM")
     ParseEnum();
+  else if(token.token == "R_CLASS")
+    ParseClass();
+  else if(token.token == "namespace")
+    ParseNamespace();
   else
     return SkipDeclaration(token);
 
@@ -176,7 +185,7 @@ void Parser::ParseEnum()
   RequireSymbol("}");
   MatchSymbol(";");
 
-  std::cout << "Parsed enum '" << enumToken.token << "' with " << values.size() << " values: ";
+  std::cout << "Parsed enum '" << GetFullyQualifiedName(enumToken.token) << "' with " << values.size() << " values: ";
   for(std::size_t i = 0; i < values.size(); ++i)
   {
     if(i > 0)
@@ -195,4 +204,86 @@ void Parser::ParseMacroMeta()
     Token token;
     GetToken(token);
   }
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::PushScope(const std::string &name, ScopeType scopeType)
+{
+  if(topScope_ == scopes_ + (sizeof(scopes_) / sizeof(Scope)) - 1)
+    throw; // Max scope depth
+
+  topScope_++;
+  topScope_->type = scopeType;
+  topScope_->name = name;
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::PopScope()
+{
+  if(topScope_ == scopes_)
+    throw; // Scope error
+
+  topScope_--;
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::ParseNamespace()
+{
+  Token token;
+  if(!GetIdentifier(token))
+    throw; // Missing namespace name
+
+  RequireSymbol("{");
+
+  PushScope(token.token, ScopeType::kNamespace);
+
+  while(!MatchSymbol("}"))
+    ParseStatement();
+
+  PopScope();
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::ParseClass()
+{
+  ParseMacroMeta();
+
+  RequireIdentifier("class");
+
+  // Get the class name
+  Token classNameToken;
+  if(!GetIdentifier(classNameToken))
+    throw; // Missing class name
+
+  // Match base types
+//  if(MatchSymbol(":"))
+//  {
+//
+//  }
+
+  RequireSymbol("{");
+
+  PushScope(classNameToken.token, ScopeType::kClass);
+
+  while(!MatchSymbol("}"))
+    ParseStatement();
+
+  PopScope();
+
+  RequireSymbol(";");
+}
+
+//--------------------------------------------------------------------------------------------------
+std::string Parser::GetFullyQualifiedName(const std::string &name)
+{
+  std::string result;
+  for(Scope *scope = scopes_; scope <= topScope_; scope++)
+  {
+    if(!result.empty())
+      result += "::";
+    result += scope->name;
+  }
+  if(!result.empty())
+    result += "::";
+  return result + name;
 }
