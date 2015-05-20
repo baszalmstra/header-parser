@@ -73,9 +73,11 @@ struct StructInfo
 
 class Handler
 {
+
+public:
+
     virtual void Class(const ClassInfo& info) {}
     virtual void Struct(const StructInfo& info) {}
     virtual void Function(const FunctionInfo& info) {}
-    virtual void Field(const FieldInfo& info) {}
     virtual void Enum(const EnumInfo& info) {}
 };
