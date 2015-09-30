@@ -16,8 +16,20 @@ enum Numbers
 };
 
 R_CLASS()
-class HenkClass
+class HenkClass : Foo, public Bar
 {
+public:
+  R_CLASS()
+  class SubClass
+  {
+
+  };
+
+  class AnonymousClass
+  {
+
+  };
+
   R_ENUM()
   enum Numbers
   {

@@ -7,49 +7,13 @@
 
 const char testContent[] = "#include <iostream>\nint main() { return 0; }";
 
-// ----------------------------------------------------------------------------------------------------
-
-class MyHandler : public Handler
+//----------------------------------------------------------------------------------------------------
+void print_usage()
 {
-  void Class(const ClassInfo& info)
-  {
-    std::cout << "Class:" << std::endl;
+  std::cout << "Usage: inputFile" << std::endl;
+}
 
-    std::cout << "  Fields:" << std::endl;
-    for(FieldInfo f : info.fields)
-      std::cout << "    " << f.type << " " << f.name << std::endl;
-
-    for(FunctionInfo f : info.methods)
-      std::cout << "    " << f.name << std::endl;
-  }
-
-  void Struct(const StructInfo& info)
-  {
-    std::cout << "Struct:" << std::endl;
-
-    std::cout << "  Fields:" << std::endl;
-    for(FieldInfo f : info.fields)
-      std::cout << "    " << f.type << " " << f.name << std::endl;
-
-    for(FunctionInfo f : info.methods)
-      std::cout << "    " << f.name << std::endl;
-  }
-
-  void Function(const FunctionInfo& info)
-  {
-    std::cout << "Function: " << info.name << std::endl;
-  }
-
-  void Enum(const EnumInfo& info)
-  {
-    std::cout << "Enum:" << std::endl;
-    for(std::string e : info.enumerators)
-      std::cout << "  " << e << std::endl;
-  }
-};
-
-// ----------------------------------------------------------------------------------------------------
-
+//----------------------------------------------------------------------------------------------------
 int main(int argc, char** argv)
 {
   std::stringstream buffer;
@@ -62,11 +26,18 @@ int main(int argc, char** argv)
     buffer << t.rdbuf();
   }
   else
-    buffer << testContent;
+  {
+    print_usage();
+    return -1;
+  }
 
   Parser parser;
-  MyHandler handler;
-//  parser.Parse(buffer.str().c_str(), handler);
-  parser.Parse(buffer.str().c_str());
+  if (parser.Parse(buffer.str().c_str()))
+    std::cout << parser.result() << std::endl;
+  
+  {
+    std::ofstream output("result.json");
+    output << parser.result();
+  }
 	return 0;
 }

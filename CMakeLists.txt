@@ -10,5 +10,7 @@ SET(SOURCES
   "parser.h"
   )
 
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/external/rapidjson/include)
+
 ADD_DEFINITIONS(-std=c++11)
 ADD_EXECUTABLE(header-parser ${SOURCES} parser.cc parser.h test.h)

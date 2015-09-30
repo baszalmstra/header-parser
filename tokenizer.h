@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstdlib>
 
-class Token;
+struct Token;
 
 class Tokenizer
 {

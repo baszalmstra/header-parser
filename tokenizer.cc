@@ -1,6 +1,7 @@
 #include "tokenizer.h"
 #include "token.h"
 #include <string>
+#include <cctype>
 
 namespace {
   static const char EndOfFileChar = std::char_traits<char>::to_char_type(std::char_traits<char>::eof());
@@ -151,8 +152,8 @@ bool Tokenizer::GetToken(Token &token)
   // Constant
   else if(std::isdigit(intc) || ((c == '-' || c == '+') && std::isdigit(intp)))
   {
-    bool isFloat;
-    bool isHex;
+    bool isFloat = false;
+    bool isHex = false;
     do
     {
       if(c == '.')
