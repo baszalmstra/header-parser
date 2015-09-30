@@ -3,6 +3,13 @@ language: cpp
 compiler:
   - clang
   
+git:
+  submodules: false
+
+before_install:
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  - git submodule update --init --recursive
+  
 install:
 # libstdc++-4.8-dev
   - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
