@@ -10,6 +10,7 @@ During my game development carreer I have found the availability of RunTime Type
 * Script bindings
 * Remote procedure calls
 * Generating models (for use in other languages)
+* Dependency injection
 * Reflection
 
 Adding this information to my C++ source always resulted in a lot of code bloat. This library provides a way of extracting RTTI information for processing in other tools almost straight from C++ constructs. 
@@ -21,13 +22,13 @@ I plan to create several tools using this library to do the above.
 # Roadmap
 - [x] Create a simple tokenizer
 - [x] Use the tokenizer to find attributes
+- [ ] Extract information from the annotations
 - [ ] Extract the source contents starting from the attribute
   - [x] Enums
   - [x] Namespaces
   - [x] Classes
-  - [ ] Functions
+  - [x] Functions
   - [ ] Member variables
-- [ ] Extract information from the annotations
 - [ ] Enable custom macro extraction
 
 ## Optionally
