@@ -66,6 +66,8 @@ bool Parser::ParseDeclaration(Token &token)
     ParseEnum();
   else if(token.token == "R_CLASS")
     ParseClass();
+  else if(token.token == "R_FUNCTION")
+    ParseFunction();
   else if (token.token == "namespace")
     ParseNamespace();
   else if (ParseAccessControl(token, topScope_->currentAccessControlType))
@@ -406,6 +408,73 @@ void Parser::ParseClass()
   writer_.EndArray();
 
   RequireSymbol(";");
+
+  writer_.EndObject();
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::ParseFunction()
+{
+  writer_.StartObject();
+  writer_.String("type");
+  writer_.String("function");
+
+  ParseMacroMeta();
+  WriteCurrentAccessControlType();
+
+  // Process method specifiers in any particular order
+  bool isVirtual = false, isInline = false, isConstExpr = false;
+  for(bool matched = true; matched;)
+  {
+    matched = (!isVirtual && (isVirtual = MatchIdentifier("virtual"))) ||
+        (!isInline && (isInline = MatchIdentifier("inline"))) ||
+        (!isConstExpr && (isConstExpr = MatchIdentifier("constexpr")));
+  }
+
+  // Write method specifiers
+  writer_.String("virtual");
+  writer_.Bool(isVirtual);
+  writer_.String("inline");
+  writer_.Bool(isInline);
+  writer_.String("constexpr");
+  writer_.Bool(isConstExpr);
+
+  // Parse the return type
+  writer_.String("returnType");
+  ParseType();
+
+  // Parse the name of the method
+  Token nameToken;
+  if(!GetIdentifier(nameToken))
+    throw; // Expected method name
+
+  writer_.String("name");
+  writer_.String(nameToken.token.c_str());
+
+  // Start argument list from here
+  MatchSymbol("(");
+
+  MatchSymbol(")");
+
+  // Optionally parse constness
+  bool isConst = MatchIdentifier("const");
+  writer_.String("const");
+  writer_.Bool(isConst);
+
+  writer_.EndObject();
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::ParseType()
+{
+  writer_.StartObject();
+
+  Token token;
+  if(!GetIdentifier(token))
+    throw; // Expected type identifier
+
+  writer_.String("type");
+  writer_.String(token.token.c_str());
 
   writer_.EndObject();
 }

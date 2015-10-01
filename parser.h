@@ -70,6 +70,10 @@ private:
   Scope *topScope_;
 
   void ParseClass();
+
+    void ParseFunction();
+
+    void ParseType();
 };
 
 

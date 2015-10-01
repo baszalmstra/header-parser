@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "test.h"
+#include "main.h"
 
 R_ENUM()
 enum Numbers
@@ -29,6 +29,9 @@ public:
   {
 
   };
+
+  R_FUNCTION()
+  bool member_method() const;
 
   R_ENUM()
   enum Numbers
