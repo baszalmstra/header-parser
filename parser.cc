@@ -164,8 +164,11 @@ void Parser::ParseEnum()
   writer_.String("name");
   writer_.String(enumToken.token.c_str());
 
-  writer_.String("cxxclass");
-  writer_.Bool(isEnumClass);
+  if (isEnumClass)
+  {
+    writer_.String("cxxclass");
+    writer_.Bool(isEnumClass);
+  }
 
   // Parse C++1x enum base
   if(isEnumClass && MatchSymbol(":"))
@@ -204,11 +207,6 @@ void Parser::ParseEnum()
       // TODO: Output number if number
       writer_.String("value");
       writer_.String(token.token.c_str());
-    }
-    else 
-    {
-      writer_.String("value");
-      writer_.Null();
     }
 
     writer_.EndObject();
@@ -432,12 +430,21 @@ void Parser::ParseFunction()
   }
 
   // Write method specifiers
-  writer_.String("virtual");
-  writer_.Bool(isVirtual);
-  writer_.String("inline");
-  writer_.Bool(isInline);
-  writer_.String("constexpr");
-  writer_.Bool(isConstExpr);
+  if (isVirtual)
+  {
+    writer_.String("virtual");
+    writer_.Bool(isVirtual);
+  }
+  if (isInline)
+  {
+    writer_.String("inline");
+    writer_.Bool(isInline);
+  }
+  if (isConstExpr)
+  {
+    writer_.String("constexpr");
+    writer_.Bool(isConstExpr);
+  }
 
   // Parse the return type
   writer_.String("returnType");
@@ -451,15 +458,75 @@ void Parser::ParseFunction()
   writer_.String("name");
   writer_.String(nameToken.token.c_str());
 
+  writer_.String("arguments");
+  writer_.StartArray();
+
   // Start argument list from here
   MatchSymbol("(");
 
-  MatchSymbol(")");
+  // Is there an argument list in the first place or is it closed right away?
+  if (!MatchSymbol(")"))
+  {
+    // Walk over all arguments
+    do
+    {
+      writer_.StartObject();
 
+      // Get the type of the argument
+      writer_.String("type");
+      ParseType();
+      
+      // Parse the name of the function
+      writer_.String("name");
+      if (!GetIdentifier(nameToken))
+        throw; // Expected identifier
+      writer_.String(nameToken.token.c_str());
+
+      // Parse default value
+      if (MatchSymbol("="))
+      {
+        writer_.String("defaultValue");
+
+        std::string defaultValue;
+        Token token;
+        while (GetToken(token))
+        {
+          if (token.token == "," ||
+            token.token == ")")
+          {
+            UngetToken(token);
+            break;
+          }
+          defaultValue += token.token;
+        }
+        writer_.String(defaultValue.c_str());
+      }
+
+      writer_.EndObject();
+    } while (MatchSymbol(",")); // Only in case another is expected
+
+    MatchSymbol(")");
+  }
+
+  writer_.EndArray();
+  
   // Optionally parse constness
-  bool isConst = MatchIdentifier("const");
-  writer_.String("const");
-  writer_.Bool(isConst);
+  if (MatchIdentifier("const"))
+  {
+    writer_.String("const");
+    writer_.Bool(true);
+  }
+
+  // Pure?
+  if (MatchSymbol("="))
+  {
+    Token token;
+    if (!GetToken(token) || token.token != "0")
+      throw; // Expected nothing else than null
+
+    writer_.String("abstract");
+    writer_.Bool(true);
+  }
 
   writer_.EndObject();
 }
@@ -467,23 +534,39 @@ void Parser::ParseFunction()
 //--------------------------------------------------------------------------------------------------
 void Parser::ParseType()
 {
-  writer_.StartObject();
+  struct Indirection
+  {
+    bool isReference;
+    bool isPointer;
+    bool isConst;
+    bool isVolatile;
+  };
 
-  // Parse declarator specifiers
+  std::vector<Indirection> indirectionQueue;
+  indirectionQueue.emplace_back(Indirection { false, false, false, false });
+
+  // Parse CV specifier
   bool isConst = false, isVolatile = false;
   for (bool matched = true; matched;)
   {
     matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
-      (!isVolatile && (isConst = MatchIdentifier("volatile")));
+      (!isVolatile && (isVolatile = MatchIdentifier("volatile")));
   }
 
+  // Parse the declarator name
   std::string declarator;
   Token token;
+  bool first = true;
   do
   {
     // Parse the declarator
     if (MatchSymbol("::"))
       declarator += "::";
+    else if (!first)
+      break;
+
+    // Mark that this is not the first time in this loop
+    first = false;
 
     // Match an identifier
     if (!GetIdentifier(token))
@@ -491,10 +574,77 @@ void Parser::ParseType()
 
     declarator += token.token;
 
-  } while (MatchSymbol("::"));
+  } while (true);
 
-  writer_.String("type");
-  writer_.String(declarator.c_str());
+  // Build stack of pointer values
+  do
+  {
+    // CV specifier may also follow the declaration
+    for (bool matched = true; matched;)
+    {
+      matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
+        (!isVolatile && (isVolatile = MatchIdentifier("volatile")));
+    }
 
-  writer_.EndObject();
+    // Store the cv-ness of the last indirection value
+    indirectionQueue.back().isConst = isConst;
+    indirectionQueue.back().isVolatile = isVolatile;
+    isConst = isVolatile = false;
+
+    // Check if there is indeed an indirection
+    bool isReference = MatchSymbol("&");
+    bool isPointer = !isReference && MatchSymbol("*");
+    if (!isReference && !isPointer)
+      break;
+
+    // Add the indirection
+    indirectionQueue.emplace_back(Indirection{ isReference, isPointer, false, false });
+  } while (true);
+     
+  size_t indirectionCount = indirectionQueue.size();
+  while (!indirectionQueue.empty())
+  {
+    Indirection indirection = indirectionQueue.back();
+    indirectionQueue.pop_back();
+
+    writer_.StartObject();
+
+    if (indirection.isConst)
+    {
+      writer_.String("const");
+      writer_.Bool(indirection.isConst);
+    }
+
+    if (indirection.isVolatile)
+    {
+      writer_.String("volatile");
+      writer_.Bool(indirection.isVolatile);
+    }
+    
+    if (!indirection.isPointer && !indirection.isReference)
+    {
+      writer_.String("type");
+      writer_.String("literal");
+
+      writer_.String("name");
+      writer_.String(declarator.c_str());
+    }
+    else if (indirection.isPointer)
+    {
+      writer_.String("type");
+      writer_.String("pointer");
+
+      writer_.String("baseType");
+    }
+    else if (indirection.isReference)
+    {
+      writer_.String("type");
+      writer_.String("reference");
+
+      writer_.String("baseType");
+    }
+  }
+
+  for (size_t i = 0; i < indirectionCount; ++i)
+    writer_.EndObject();
 }

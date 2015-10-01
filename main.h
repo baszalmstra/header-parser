@@ -31,13 +31,13 @@ public:
   };
 
   R_FUNCTION()
-  bool member_method() const;
+  inline virtual String const & member_method(const String& name, bool enable = true) const = 0;
 
   R_ENUM()
   enum Numbers
   {
     Zero,
-    One,
+    One = 1,
     Two,
     Three =0,
   };
