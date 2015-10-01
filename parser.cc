@@ -469,12 +469,32 @@ void Parser::ParseType()
 {
   writer_.StartObject();
 
+  // Parse declarator specifiers
+  bool isConst = false, isVolatile = false;
+  for (bool matched = true; matched;)
+  {
+    matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
+      (!isVolatile && (isConst = MatchIdentifier("volatile")));
+  }
+
+  std::string declarator;
   Token token;
-  if(!GetIdentifier(token))
-    throw; // Expected type identifier
+  do
+  {
+    // Parse the declarator
+    if (MatchSymbol("::"))
+      declarator += "::";
+
+    // Match an identifier
+    if (!GetIdentifier(token))
+      throw; // Expected identifier
+
+    declarator += token.token;
+
+  } while (MatchSymbol("::"));
 
   writer_.String("type");
-  writer_.String(token.token.c_str());
+  writer_.String(declarator.c_str());
 
   writer_.EndObject();
 }
