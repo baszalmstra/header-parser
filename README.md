@@ -22,7 +22,7 @@ I plan to create several tools using this library to do the above.
 # Roadmap
 - [x] Create a simple tokenizer
 - [x] Use the tokenizer to find attributes
-- [ ] Extract information from the annotations
+- [x] Extract information from the annotations
 - [ ] Extract the source contents starting from the attribute
   - [x] Enums
   - [x] Namespaces

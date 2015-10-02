@@ -204,9 +204,8 @@ void Parser::ParseEnum()
       // Just parse the value, not doing anything with it atm
       GetToken(token);
   
-      // TODO: Output number if number
       writer_.String("value");
-      writer_.String(token.token.c_str());
+      WriteToken(token);
     }
 
     writer_.EndObject();
@@ -227,12 +226,48 @@ void Parser::ParseEnum()
 //--------------------------------------------------------------------------------------------------
 void Parser::ParseMacroMeta()
 {
+  writer_.String("meta");
+
   RequireSymbol("(");
-  while(!MatchSymbol(")"))
+  ParseMetaSequence();
+}
+
+//--------------------------------------------------------------------------------------------------
+void Parser::ParseMetaSequence()
+{
+  writer_.StartObject();
+
+  if(!MatchSymbol(")"))
   {
-    Token token;
-    GetToken(token);
+    do
+    {
+      // Parse key value
+      Token keyToken;
+      if (!GetIdentifier(keyToken))
+        throw; // Expected identifier
+
+      writer_.String(keyToken.token.c_str());
+
+      // Simple value?
+      if (MatchSymbol("=")) {
+        Token token;
+        if (!GetToken(token))
+          throw; // Expected token
+
+        WriteToken(token);
+      }
+        // Compound value
+      else if (MatchSymbol("("))
+        ParseMetaSequence();
+        // No value
+      else
+        writer_.Null();
+    } while (MatchSymbol(","));
+
+    MatchSymbol(")");
   }
+
+  writer_.EndObject();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -489,17 +524,23 @@ void Parser::ParseFunction()
 
         std::string defaultValue;
         Token token;
-        while (GetToken(token))
+        GetToken(token);
+        if(token.tokenType == TokenType::kConst)
+          WriteToken(token);
+        else
         {
-          if (token.token == "," ||
-            token.token == ")")
+          do
           {
-            UngetToken(token);
-            break;
-          }
-          defaultValue += token.token;
+            if (token.token == "," ||
+              token.token == ")")
+            {
+              UngetToken(token);
+              break;
+            }
+            defaultValue += token.token;
+          } while (GetToken(token));
+          writer_.String(defaultValue.c_str());
         }
-        writer_.String(defaultValue.c_str());
       }
 
       writer_.EndObject();
@@ -647,4 +688,38 @@ void Parser::ParseType()
 
   for (size_t i = 0; i < indirectionCount; ++i)
     writer_.EndObject();
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+void Parser::WriteToken(const Token &token)
+{
+  if(token.tokenType == TokenType::kConst)
+  {
+    switch(token.constType)
+    {
+    case ConstType::kBoolean:
+      writer_.Bool(token.boolConst);
+      break;
+    case ConstType::kUInt32:
+      writer_.Uint(token.uint32Const);
+      break;
+    case ConstType::kInt32:
+      writer_.Int(token.int32Const);
+      break;
+    case ConstType::kUInt64:
+      writer_.Uint64(token.uint64Const);
+      break;
+    case ConstType::kInt64:
+      writer_.Int64(token.int64Const);
+      break;
+    case ConstType::kReal:
+      writer_.Double(token.realConst);
+      break;
+    case ConstType::kString:
+      writer_.String((std::string("\"") + token.stringConst + "\"").c_str());
+      break;
+    }
+  }
+  else
+    writer_.String(token.token.c_str());
 }

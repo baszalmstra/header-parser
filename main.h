@@ -15,7 +15,7 @@ enum Numbers
   Three =0,
 };
 
-R_CLASS()
+R_CLASS(Abstract)
 class HenkClass : Foo, public Bar
 {
 public:
@@ -30,7 +30,7 @@ public:
 
   };
 
-  R_FUNCTION()
+  R_FUNCTION(Serializable="yes", Setter=set_member_method, meta(Foo=true, Bar=0xF, Hello=0.5f, World=0.10))
   inline virtual String const & member_method(const String& name, bool enable = true) const = 0;
 
   R_ENUM()

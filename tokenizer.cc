@@ -147,6 +147,19 @@ bool Tokenizer::GetToken(Token &token)
     // Set the type of the token
     token.tokenType = TokenType::kIdentifier;
 
+    if(token.token == "true")
+    {
+      token.tokenType = TokenType::kConst;
+      token.constType = ConstType::kBoolean;
+      token.boolConst = true;
+    }
+    else if(token.token == "false")
+    {
+      token.tokenType = TokenType::kConst;
+      token.constType = ConstType::kBoolean;
+      token.boolConst = false;
+    }
+
     return true;
   }
   // Constant
@@ -154,6 +167,7 @@ bool Tokenizer::GetToken(Token &token)
   {
     bool isFloat = false;
     bool isHex = false;
+    bool isNegated = c == '-';
     do
     {
       if(c == '.')
@@ -175,6 +189,40 @@ bool Tokenizer::GetToken(Token &token)
       UngetChar();
 
     token.tokenType = TokenType::kConst;
+    if(!isFloat)
+    {
+      try
+      {
+        if(isNegated)
+        {
+          token.int32Const = std::stoi(token.token, 0, 0);
+          token.constType = ConstType::kInt32;
+        }
+        else
+        {
+          token.uint32Const = std::stoul(token.token, 0, 0);
+          token.constType = ConstType::kUInt32;
+        }
+      }
+      catch(std::out_of_range)
+      {
+        if(isNegated)
+        {
+          token.int64Const = std::stoll(token.token, 0, 0);
+          token.constType = ConstType::kInt64;
+        }
+        else
+        {
+          token.uint64Const = std::stoull(token.token, 0, 0);
+          token.constType = ConstType::kUInt64;
+        }
+      }
+    }
+    else
+    {
+      token.realConst = std::stod(token.token);
+      token.constType = ConstType::kReal;
+    }
 
     return true;
   }
@@ -206,6 +254,8 @@ bool Tokenizer::GetToken(Token &token)
       UngetChar();
 
     token.tokenType = TokenType::kConst;
+    token.constType = ConstType::kString;
+    token.stringConst = token.token;
 
     return true;
   }

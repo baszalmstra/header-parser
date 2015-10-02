@@ -43,6 +43,7 @@ protected:
   bool SkipDeclaration(Token &token);
   void ParseEnum();
   void ParseMacroMeta();
+  void ParseMetaSequence();
 
   void PushScope(const std::string& name, ScopeType scopeType, AccessControlType accessControlType);
   void PopScope();
@@ -54,6 +55,10 @@ protected:
   void WriteCurrentAccessControlType();
 
   void WriteAccessControlType(AccessControlType type);
+  void ParseClass();
+  void ParseFunction();
+  void ParseType();
+  void WriteToken(const Token &token);
 
 private:
   rapidjson::StringBuffer buffer_;
@@ -68,12 +73,6 @@ private:
 
   Scope scopes_[64];
   Scope *topScope_;
-
-  void ParseClass();
-
-    void ParseFunction();
-
-    void ParseType();
 };
 
 
