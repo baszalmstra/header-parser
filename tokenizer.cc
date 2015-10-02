@@ -2,6 +2,7 @@
 #include "token.h"
 #include <string>
 #include <cctype>
+#include <stdexcept>
 
 namespace {
   static const char EndOfFileChar = std::char_traits<char>::to_char_type(std::char_traits<char>::eof());
