@@ -699,6 +699,24 @@ std::string Parser::ParseTypename()
 
   } while (true);
 
+  // Parse template arguments
+  if (MatchSymbol("<"))
+  {
+    declarator += "<";
+    int templateCount = 1;
+    while (templateCount > 0)
+    {
+      Token token;
+      GetToken(token);
+      if (token.token == "<")
+        templateCount++;
+      else if (token.token == ">")
+        templateCount--;
+      
+      declarator += token.token;
+    }
+  }
+
   return declarator;
 }
 

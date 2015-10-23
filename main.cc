@@ -60,9 +60,5 @@ int main(int argc, char** argv)
   if (parser.Parse(buffer.str().c_str()))
     std::cout << parser.result() << std::endl;
   
-  {
-    std::ofstream output("result.json");
-    output << parser.result();
-  }
 	return 0;
 }
