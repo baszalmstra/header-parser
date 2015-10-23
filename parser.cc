@@ -114,7 +114,7 @@ void Parser::ParseDirective()
   {
     // Skip to the end of the line
     char c;
-    while((c = GetChar()) != '\n')
+    while(!this->is_eof() && (c = GetChar()) != '\n')
       lastChar = c;
 
   } while(multiLineEnabled && lastChar == '\\');
