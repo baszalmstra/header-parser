@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tokenizer.h"
+#include "options.h"
 #include <string>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
@@ -22,7 +23,7 @@ enum class AccessControlType
 class Parser : private Tokenizer
 {
 public:
-  Parser();
+  Parser(const Options& options);
   virtual ~Parser();
 
   // No copying of parser
@@ -58,9 +59,13 @@ protected:
   void ParseClass();
   void ParseFunction();
   void ParseType();
-  void WriteToken(const Token &token);
 
+  std::string ParseTypename();
+
+  void WriteToken(const Token &token);
+  void ParseCustomMacro(Token & token, const std::string& macroName);
 private:
+  Options options_;
   rapidjson::StringBuffer buffer_;
   rapidjson::PrettyWriter<rapidjson::StringBuffer> writer_;
 

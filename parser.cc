@@ -4,7 +4,7 @@
 #include "token.h"
 
 //--------------------------------------------------------------------------------------------------
-Parser::Parser() : writer_(buffer_)
+Parser::Parser(const Options &options) : options_(options), writer_(buffer_)
 {
 
 }
@@ -58,20 +58,23 @@ bool Parser::ParseStatement()
 //--------------------------------------------------------------------------------------------------
 bool Parser::ParseDeclaration(Token &token)
 {
+  std::vector<std::string>::const_iterator customMacroIt;
   if(token.token == "#")
     ParseDirective();
   else if(token.token == ";")
     ; // Empty statement
-  else if(token.token == "R_ENUM")
+  else if(token.token == options_.enumNameMacro)
     ParseEnum();
-  else if(token.token == "R_CLASS")
+  else if (token.token == options_.classNameMacro)
     ParseClass();
-  else if(token.token == "R_FUNCTION")
+  else if (token.token == options_.functionNameMacro)
     ParseFunction();
   else if (token.token == "namespace")
     ParseNamespace();
   else if (ParseAccessControl(token, topScope_->currentAccessControlType))
     RequireSymbol(":");
+  else if ((customMacroIt = std::find(options_.customMacros.begin(), options_.customMacros.end(), token.token)) != options_.customMacros.end())
+    ParseCustomMacro(token, *customMacroIt);
   else
     return SkipDeclaration(token);
 
@@ -95,7 +98,7 @@ void Parser::ParseDirective()
   else if(token.token == "include")
   {
     Token includeToken;
-    GetToken(includeToken);
+    GetToken(includeToken, true);
 
     writer_.StartObject();
     writer_.String("type");
@@ -411,13 +414,14 @@ void Parser::ParseClass()
 
       // Parse the access control specifier
       AccessControlType accessControlType = AccessControlType::kPrivate;
-      if (ParseAccessControl(accessOrName, accessControlType))
-        GetIdentifier(accessOrName);
-
-      // Get the name of the class
+      if (!ParseAccessControl(accessOrName, accessControlType))
+        UngetToken(accessOrName);
       WriteAccessControlType(accessControlType);
+      
+      // Get the name of the class
       writer_.String("name");
-      writer_.String(accessOrName.token.c_str());
+      std::string declarator = ParseTypename();
+      writer_.String(declarator.c_str());
 
       writer_.EndObject();
     }
@@ -595,27 +599,7 @@ void Parser::ParseType()
   }
 
   // Parse the declarator name
-  std::string declarator;
-  Token token;
-  bool first = true;
-  do
-  {
-    // Parse the declarator
-    if (MatchSymbol("::"))
-      declarator += "::";
-    else if (!first)
-      break;
-
-    // Mark that this is not the first time in this loop
-    first = false;
-
-    // Match an identifier
-    if (!GetIdentifier(token))
-      throw; // Expected identifier
-
-    declarator += token.token;
-
-  } while (true);
+  std::string declarator = ParseTypename();
 
   // Build stack of pointer values
   do
@@ -690,6 +674,34 @@ void Parser::ParseType()
     writer_.EndObject();
 }
 
+//-------------------------------------------------------------------------------------------------
+std::string Parser::ParseTypename()
+{
+  std::string declarator;
+  Token token;
+  bool first = true;
+  do
+  {
+    // Parse the declarator
+    if (MatchSymbol("::"))
+      declarator += "::";
+    else if (!first)
+      break;
+
+    // Mark that this is not the first time in this loop
+    first = false;
+
+    // Match an identifier
+    if (!GetIdentifier(token))
+      throw; // Expected identifier
+
+    declarator += token.token;
+
+  } while (true);
+
+  return declarator;
+}
+
 //----------------------------------------------------------------------------------------------------------------------
 void Parser::WriteToken(const Token &token)
 {
@@ -722,4 +734,20 @@ void Parser::WriteToken(const Token &token)
   }
   else
     writer_.String(token.token.c_str());
+}
+
+//-------------------------------------------------------------------------------------------------
+void Parser::ParseCustomMacro(Token & token, const std::string& macroName)
+{
+  writer_.StartObject();
+  writer_.String("type");
+  writer_.String("macro");
+  writer_.String("name");
+  writer_.String(macroName.c_str());
+
+  WriteCurrentAccessControlType();
+
+  ParseMacroMeta();
+
+  writer_.EndObject();
 }

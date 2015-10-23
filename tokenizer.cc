@@ -111,7 +111,7 @@ char Tokenizer::GetLeadingChar()
 }
 
 //--------------------------------------------------------------------------------------------------
-bool Tokenizer::GetToken(Token &token)
+bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings)
 {
   // Get the next character
   char c = GetLeadingChar();
@@ -227,10 +227,12 @@ bool Tokenizer::GetToken(Token &token)
 
     return true;
   }
-  else if(c == '"')
+  else if (c == '"' || (angleBracketsForStrings && c == '<'))
   {
+    const char closingElement = c == '"' ? '"' : '>';
+
     c = GetChar();
-    while(c != '"' && std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
+    while (c != closingElement && std::char_traits<char>::not_eof(std::char_traits<char>::to_int_type(c)))
     {
       if(c == '\\')
       {
@@ -251,7 +253,7 @@ bool Tokenizer::GetToken(Token &token)
       c = GetChar();
     }
 
-    if(c != '"')
+    if (c != closingElement)
       UngetChar();
 
     token.tokenType = TokenType::kConst;

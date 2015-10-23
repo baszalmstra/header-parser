@@ -19,7 +19,7 @@ public:
   void Reset(const char* input, std::size_t startingLine = 1);
 
   /// Parses a token from the stream
-  bool GetToken(Token& token);
+  bool GetToken(Token& token, bool angleBracketsForStrings = false);
 
   /// Parses an identifier from the stream
   bool GetIdentifier(Token& token);
