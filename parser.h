@@ -42,7 +42,7 @@ protected:
   bool ParseDeclaration(Token &token);
   void ParseDirective();
   bool SkipDeclaration(Token &token);
-  void ParseEnum();
+  void ParseEnum(Token &token);
   void ParseMacroMeta();
   void ParseMetaSequence();
 
@@ -56,8 +56,8 @@ protected:
   void WriteCurrentAccessControlType();
 
   void WriteAccessControlType(AccessControlType type);
-  void ParseClass();
-  void ParseFunction();
+  void ParseClass(Token &token);
+  void ParseFunction(Token &token);
   void ParseType();
 
   std::string ParseTypename();

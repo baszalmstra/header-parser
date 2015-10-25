@@ -64,11 +64,11 @@ bool Parser::ParseDeclaration(Token &token)
   else if(token.token == ";")
     ; // Empty statement
   else if(token.token == options_.enumNameMacro)
-    ParseEnum();
+    ParseEnum(token);
   else if (token.token == options_.classNameMacro)
-    ParseClass();
+    ParseClass(token);
   else if (token.token == options_.functionNameMacro)
-    ParseFunction();
+    ParseFunction(token);
   else if (token.token == "namespace")
     ParseNamespace();
   else if (ParseAccessControl(token, topScope_->currentAccessControlType))
@@ -144,11 +144,13 @@ bool Parser::SkipDeclaration(Token &token)
 }
 
 //--------------------------------------------------------------------------------------------------
-void Parser::ParseEnum()
+void Parser::ParseEnum(Token &startToken)
 {
   writer_.StartObject();
   writer_.String("type");
   writer_.String("enum");
+  writer_.String("line");
+  writer_.Uint(startToken.startLine);
 
   WriteCurrentAccessControlType();
 
@@ -378,11 +380,13 @@ void Parser::WriteAccessControlType(AccessControlType type)
 }
 
 //--------------------------------------------------------------------------------------------------
-void Parser::ParseClass()
+void Parser::ParseClass(Token &token)
 {
   writer_.StartObject();
   writer_.String("type");
   writer_.String("class");
+  writer_.String("line");
+  writer_.Uint(token.startLine);
 
   WriteCurrentAccessControlType();
 
@@ -450,11 +454,13 @@ void Parser::ParseClass()
 }
 
 //--------------------------------------------------------------------------------------------------
-void Parser::ParseFunction()
+void Parser::ParseFunction(Token &token)
 {
   writer_.StartObject();
   writer_.String("type");
   writer_.String("function");
+  writer_.String("line");
+  writer_.Uint(token.startLine);
 
   ParseMacroMeta();
   WriteCurrentAccessControlType();
@@ -762,6 +768,8 @@ void Parser::ParseCustomMacro(Token & token, const std::string& macroName)
   writer_.String("macro");
   writer_.String("name");
   writer_.String(macroName.c_str());
+  writer_.String("line");
+  writer_.Uint(token.startLine);
 
   WriteCurrentAccessControlType();
 
