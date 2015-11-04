@@ -235,6 +235,9 @@ void Parser::ParseMacroMeta()
 
   RequireSymbol("(");
   ParseMetaSequence();
+
+  // Possible ;
+  MatchSymbol(";");
 }
 
 //--------------------------------------------------------------------------------------------------
