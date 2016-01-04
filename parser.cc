@@ -583,6 +583,10 @@ void Parser::ParseFunction(Token &token)
   }
 
   writer_.EndObject();
+
+  // Skip either the ; or the body of the function
+  Token skipToken;
+  SkipDeclaration(skipToken);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -755,7 +759,8 @@ void Parser::WriteToken(const Token &token)
       writer_.Double(token.realConst);
       break;
     case ConstType::kString:
-      writer_.String((std::string("\"") + token.stringConst + "\"").c_str());
+      //writer_.String((std::string("\"") + token.stringConst + "\"").c_str());
+      writer_.String(token.stringConst.c_str());
       break;
     }
   }
