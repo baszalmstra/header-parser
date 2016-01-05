@@ -78,6 +78,8 @@ private:
 
   Scope scopes_[64];
   Scope *topScope_;
+
+  void ParseProperty(Token &token);
 };
 
 

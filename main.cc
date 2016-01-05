@@ -28,6 +28,7 @@ int main(int argc, char** argv)
     ValueArg<std::string> enumName("e", "enum", "The name of the enum macro", false, "ENUM", "", cmd);
     ValueArg<std::string> className("c", "class", "The name of the class macro", false, "CLASS", "", cmd);
     ValueArg<std::string> functionName("f", "function", "The name of the function macro", false, "FUNCTION", "", cmd);
+    ValueArg<std::string> propertyName("p", "property", "The name of the property macro", false, "PROPERTY", "", cmd);
     MultiArg<std::string> customMacro("m", "macro", "Custom macro names to parse", false, "", cmd);
     UnlabeledValueArg<std::string> inputFileArg("inputFile", "The file to process", true, "", "", cmd);
 
@@ -38,6 +39,7 @@ int main(int argc, char** argv)
     options.enumNameMacro = enumName.getValue();
     options.functionNameMacro = functionName.getValue();
     options.customMacros = customMacro.getValue();
+    options.propertyNameMacro = propertyName.getValue();
   }
   catch (TCLAP::ArgException& e)
   {

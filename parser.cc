@@ -69,6 +69,8 @@ bool Parser::ParseDeclaration(Token &token)
     ParseClass(token);
   else if (token.token == options_.functionNameMacro)
     ParseFunction(token);
+  else if(token.token == options_.propertyNameMacro)
+    ParseProperty(token);
   else if (token.token == "namespace")
     ParseNamespace();
   else if (ParseAccessControl(token, topScope_->currentAccessControlType))
@@ -456,6 +458,47 @@ void Parser::ParseClass(Token &token)
   writer_.EndObject();
 }
 
+//-------------------------------------------------------------------------------------------------
+void Parser::ParseProperty(Token &token)
+{
+  writer_.StartObject();
+  writer_.String("type");
+  writer_.String("property");
+  writer_.String("line");
+  writer_.Uint(token.startLine);
+
+  ParseMacroMeta();
+  WriteCurrentAccessControlType();
+
+  // Check mutable
+  bool isMutable = MatchIdentifier("mutable");
+  if(isMutable)
+  {
+    writer_.String("mutable");
+    writer_.Bool(true);
+  }
+
+  // Parse the type
+  writer_.String("dataType");
+  ParseType();
+
+  // Parse the name
+  Token nameToken;
+  if(!GetIdentifier(nameToken))
+    throw; // Expected a property name
+
+  writer_.String("name");
+  writer_.String(nameToken.token.c_str());
+
+  writer_.EndObject();
+
+  // Skip until the end of the definition
+  Token t;
+  while(GetToken(t))
+    if(t.token == ";")
+      break;
+}
+
 //--------------------------------------------------------------------------------------------------
 void Parser::ParseFunction(Token &token)
 {
@@ -717,6 +760,7 @@ std::string Parser::ParseTypename()
   {
     declarator += "<";
     int templateCount = 1;
+    int tokenCount = 0;
     while (templateCount > 0)
     {
       Token token;
@@ -725,8 +769,11 @@ std::string Parser::ParseTypename()
         templateCount++;
       else if (token.token == ">")
         templateCount--;
+      else if(tokenCount > 0)
+        declarator += " ";
       
       declarator += token.token;
+      tokenCount++;
     }
   }
 
