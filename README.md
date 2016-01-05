@@ -23,13 +23,13 @@ I plan to create several tools using this library to do the above.
 - [x] Create a simple tokenizer
 - [x] Use the tokenizer to find attributes
 - [x] Extract information from the annotations
-- [ ] Extract the source contents starting from the attribute
+- [x] Extract the source contents starting from the attribute
   - [x] Enums
   - [x] Namespaces
   - [x] Classes
   - [x] Functions
-  - [ ] Member variables
-- [ ] Enable custom macro extraction
+  - [x] Member variables
+- [x] Enable custom macro extraction
 
 ## Optionally
 - [ ] Translate raw json to a more consumable format by 3rd party tools
