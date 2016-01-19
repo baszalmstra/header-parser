@@ -1,6 +1,7 @@
 [submodule "external/rapidjson"]
 	path = external/rapidjson
 	url = git@github.com:miloyip/rapidjson.git
+	fetchRecurseSubmodules = false
 [submodule "external/cmdline"]
 	path = external/cmdline
 	url = git@github.com:tanakh/cmdline.git
