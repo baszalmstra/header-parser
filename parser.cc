@@ -210,10 +210,15 @@ void Parser::ParseEnum(Token &startToken)
     if(MatchSymbol("="))
     {
       // Just parse the value, not doing anything with it atm
-      GetToken(token);
+      std::string value;
+      while (GetToken(token) && (token.tokenType != TokenType::kSymbol || (token.token != "," && token.token != "}")))
+      {
+        value += token.token;
+      }
+      UngetToken(token);
   
       writer_.String("value");
-      WriteToken(token);
+      writer_.String(value.c_str());
     }
 
     writer_.EndObject();
