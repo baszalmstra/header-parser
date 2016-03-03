@@ -153,7 +153,7 @@ void Parser::ParseEnum(Token &startToken)
   writer_.String("type");
   writer_.String("enum");
   writer_.String("line");
-  writer_.Uint(startToken.startLine);
+  writer_.Uint((unsigned)startToken.startLine);
 
   WriteCurrentAccessControlType();
 
@@ -392,10 +392,10 @@ void Parser::ParseClass(Token &token)
   writer_.String("type");
   writer_.String("class");
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned)token.startLine);
 
   WriteCurrentAccessControlType();
-
+  ParseComment();
   ParseMacroMeta();
 
   RequireIdentifier("class");
@@ -466,7 +466,7 @@ void Parser::ParseProperty(Token &token)
   writer_.String("type");
   writer_.String("property");
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
 
   ParseMacroMeta();
   WriteCurrentAccessControlType();
@@ -507,7 +507,10 @@ void Parser::ParseFunction(Token &token)
   writer_.String("type");
   writer_.String("function");
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
+
+  ParseComment();
+
 
   ParseMacroMeta();
   WriteCurrentAccessControlType();
@@ -633,6 +636,17 @@ void Parser::ParseFunction(Token &token)
   SkipDeclaration(skipToken);
 }
 
+//-------------------------------------------------------------------------------------------------
+void Parser::ParseComment()
+{
+  std::string comment = lastComment_.endLine == cursorLine_ ? lastComment_.text : "";
+  if (!comment.empty())
+  {
+    writer_.String("comment");
+    writer_.String(comment.c_str());
+  }
+}
+
 //--------------------------------------------------------------------------------------------------
 void Parser::ParseType()
 {
@@ -734,6 +748,8 @@ void Parser::ParseType()
 //-------------------------------------------------------------------------------------------------
 std::string Parser::ParseTypename()
 {
+  MatchSymbol("class");
+
   std::string declarator;
   Token token;
   bool first = true;
@@ -765,7 +781,7 @@ std::string Parser::ParseTypename()
     while (templateCount > 0)
     {
       Token token;
-      GetToken(token);
+      GetToken(token, false, true);
       if (token.token == "<")
         templateCount++;
       else if (token.token == ">")
@@ -825,7 +841,7 @@ void Parser::ParseCustomMacro(Token & token, const std::string& macroName)
   writer_.String("name");
   writer_.String(macroName.c_str());
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
 
   WriteCurrentAccessControlType();
 

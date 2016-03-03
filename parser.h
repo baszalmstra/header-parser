@@ -58,6 +58,9 @@ protected:
   void WriteAccessControlType(AccessControlType type);
   void ParseClass(Token &token);
   void ParseFunction(Token &token);
+
+  void ParseComment();
+
   void ParseType();
 
   std::string ParseTypename();
