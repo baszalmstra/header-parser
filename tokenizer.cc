@@ -460,7 +460,7 @@ bool Tokenizer::MatchIdentifier(const char *identifier)
 bool Tokenizer::MatchSymbol(const char *symbol)
 {
   Token token;
-  if(GetToken(token))
+  if(GetToken(token, false, std::char_traits<char>::length(symbol) == 1 && symbol[0] == '>'))
   {
     if(token.tokenType == TokenType::kSymbol && token.token == symbol)
       return true;

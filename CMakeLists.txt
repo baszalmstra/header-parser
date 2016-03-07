@@ -9,6 +9,7 @@ SET(SOURCES
   "tokenizer.h"
   "parser.cc"
   "parser.h"
+  "type_node.h"
   )
 
 INCLUDE_DIRECTORIES(
