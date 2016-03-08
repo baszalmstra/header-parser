@@ -75,8 +75,15 @@ struct FunctionNode : public TypeNode
 {
   FunctionNode() : TypeNode(TypeNode::Type::kFunction) {}
 
+  struct Argument
+  {
+    std::string name;
+    std::unique_ptr<TypeNode> type;
+  };
+
+
   std::unique_ptr<TypeNode> returns;
-  std::vector<std::unique_ptr<TypeNode>> arguments;
+  std::vector<std::unique_ptr<Argument>> arguments;
 };
 
 struct ITypeNodeVisitor

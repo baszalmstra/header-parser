@@ -25,7 +25,17 @@ public:
     writer_.String("arguments");
     writer_.StartArray();
     for (auto& arg : node.arguments)
-      VisitNode(*arg);
+    {
+      writer_.StartObject();
+      if (!arg->name.empty())
+      {
+        writer_.String("name");
+        writer_.String(arg->name.c_str());
+      }
+      writer_.String("type");
+      VisitNode(*arg->type);
+      writer_.EndObject();
+    }
     writer_.EndArray();
   }
 
@@ -852,7 +862,21 @@ std::unique_ptr<TypeNode> Parser::ParseTypeNode()
     {
       do
       {
-        funcNode->arguments.emplace_back(ParseTypeNode());
+        std::unique_ptr<FunctionNode::Argument> argument(new FunctionNode::Argument);
+        argument->type = ParseTypeNode();
+
+        // Get , or name identifier
+        if (!GetToken(token))
+          throw; // Unexpected end of file
+
+        // Parse optional name
+        if (token.tokenType == TokenType::kIdentifier)
+          argument->name = token.token;
+        else
+          UngetToken(token);          
+
+        funcNode->arguments.emplace_back(std::move(argument));
+
       } while (MatchSymbol(","));
       if (!MatchSymbol(")"))
         throw;
