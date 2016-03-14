@@ -6,8 +6,6 @@
 #include <fstream>
 #include <sstream>
 
-const char testContent[] = "#include <iostream>\nint main() { return 0; }";
-
 //----------------------------------------------------------------------------------------------------
 void print_usage()
 {
