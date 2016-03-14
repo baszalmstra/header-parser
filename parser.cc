@@ -4,6 +4,124 @@
 #include "parser.h"
 #include "token.h"
 
+//-------------------------------------------------------------------------------------------------
+// Class used to write a typenode structure to json
+//-------------------------------------------------------------------------------------------------
+class TypeNodeWriter : public TypeNodeVisitor
+{
+public:
+  TypeNodeWriter(rapidjson::PrettyWriter<rapidjson::StringBuffer>& writer) :
+    writer_(writer) {}
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(FunctionNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("function");
+
+    writer_.String("returnType");
+    VisitNode(*node.returns);
+
+    writer_.String("arguments");
+    writer_.StartArray();
+    for (auto& arg : node.arguments)
+    {
+      writer_.StartObject();
+      if (!arg->name.empty())
+      {
+        writer_.String("name");
+        writer_.String(arg->name.c_str());
+      }
+      writer_.String("type");
+      VisitNode(*arg->type);
+      writer_.EndObject();
+    }
+    writer_.EndArray();
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(LReferenceNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("lreference");
+
+    writer_.String("baseType");
+    VisitNode(*node.base);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(LiteralNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("literal");
+
+    writer_.String("name");
+    writer_.String(node.name.c_str());
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(PointerNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("pointer");
+
+    writer_.String("baseType");
+    VisitNode(*node.base);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(ReferenceNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("reference");
+
+    writer_.String("baseType");
+    VisitNode(*node.base);
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void Visit(TemplateNode& node) override
+  {
+    writer_.String("type");
+    writer_.String("template");
+
+    writer_.String("name");
+    writer_.String(node.name.c_str());
+
+    writer_.String("arguments");
+    writer_.StartArray();
+    for (auto& arg : node.arguments)
+      VisitNode(*arg);
+    writer_.EndArray();
+  }
+
+  //-------------------------------------------------------------------------------------------------
+  virtual void VisitNode(TypeNode &node) override
+  {
+    writer_.StartObject();
+    if (node.isConst)
+    {
+      writer_.String("const");
+      writer_.Bool(true);
+    }
+    if (node.isMutable)
+    {
+      writer_.String("mutable");
+      writer_.Bool(true);
+    }
+    if (node.isVolatile)
+    {
+      writer_.String("volatile");
+      writer_.Bool(true);
+    }
+    TypeNodeVisitor::VisitNode(node);
+    writer_.EndObject();
+  }
+
+private:
+  rapidjson::PrettyWriter<rapidjson::StringBuffer> &writer_;
+};
+
 //--------------------------------------------------------------------------------------------------
 Parser::Parser(const Options &options) : options_(options), writer_(buffer_)
 {
@@ -68,8 +186,8 @@ bool Parser::ParseDeclaration(Token &token)
     ParseEnum(token);
   else if (token.token == options_.classNameMacro)
     ParseClass(token);
-  else if (token.token == options_.functionNameMacro)
-    ParseFunction(token);
+  else if ((customMacroIt = std::find(options_.functionNameMacro.begin(), options_.functionNameMacro.end(), token.token)) != options_.functionNameMacro.end())
+    ParseFunction(token, *customMacroIt);
   else if(token.token == options_.propertyNameMacro)
     ParseProperty(token);
   else if (token.token == "namespace")
@@ -153,7 +271,7 @@ void Parser::ParseEnum(Token &startToken)
   writer_.String("type");
   writer_.String("enum");
   writer_.String("line");
-  writer_.Uint(startToken.startLine);
+  writer_.Uint((unsigned)startToken.startLine);
 
   WriteCurrentAccessControlType();
 
@@ -210,10 +328,15 @@ void Parser::ParseEnum(Token &startToken)
     if(MatchSymbol("="))
     {
       // Just parse the value, not doing anything with it atm
-      GetToken(token);
+      std::string value;
+      while (GetToken(token) && (token.tokenType != TokenType::kSymbol || (token.token != "," && token.token != "}")))
+      {
+        value += token.token;
+      }
+      UngetToken(token);
   
       writer_.String("value");
-      WriteToken(token);
+      writer_.String(value.c_str());
     }
 
     writer_.EndObject();
@@ -392,10 +515,10 @@ void Parser::ParseClass(Token &token)
   writer_.String("type");
   writer_.String("class");
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned)token.startLine);
 
   WriteCurrentAccessControlType();
-
+  ParseComment();
   ParseMacroMeta();
 
   RequireIdentifier("class");
@@ -430,8 +553,7 @@ void Parser::ParseClass(Token &token)
       
       // Get the name of the class
       writer_.String("name");
-      std::string declarator = ParseTypename();
-      writer_.String(declarator.c_str());
+      ParseType();
 
       writer_.EndObject();
     }
@@ -466,7 +588,7 @@ void Parser::ParseProperty(Token &token)
   writer_.String("type");
   writer_.String("property");
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
 
   ParseMacroMeta();
   WriteCurrentAccessControlType();
@@ -501,13 +623,18 @@ void Parser::ParseProperty(Token &token)
 }
 
 //--------------------------------------------------------------------------------------------------
-void Parser::ParseFunction(Token &token)
+void Parser::ParseFunction(Token &token, const std::string& macroName)
 {
   writer_.StartObject();
   writer_.String("type");
   writer_.String("function");
+  writer_.String("macro");
+  writer_.String(macroName.c_str());
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
+
+  ParseComment();
+
 
   ParseMacroMeta();
   WriteCurrentAccessControlType();
@@ -633,107 +760,147 @@ void Parser::ParseFunction(Token &token)
   SkipDeclaration(skipToken);
 }
 
+//-------------------------------------------------------------------------------------------------
+void Parser::ParseComment()
+{
+  std::string comment = lastComment_.endLine == cursorLine_ ? lastComment_.text : "";
+  if (!comment.empty())
+  {
+    writer_.String("comment");
+    writer_.String(comment.c_str());
+  }
+}
+
 //--------------------------------------------------------------------------------------------------
 void Parser::ParseType()
 {
-  struct Indirection
-  {
-    bool isReference;
-    bool isPointer;
-    bool isConst;
-    bool isVolatile;
-  };
-
-  std::vector<Indirection> indirectionQueue;
-  indirectionQueue.emplace_back(Indirection { false, false, false, false });
-
-  // Parse CV specifier
-  bool isConst = false, isVolatile = false;
-  for (bool matched = true; matched;)
-  {
-    matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
-      (!isVolatile && (isVolatile = MatchIdentifier("volatile")));
-  }
-
-  // Parse the declarator name
-  std::string declarator = ParseTypename();
-
-  // Build stack of pointer values
-  do
-  {
-    // CV specifier may also follow the declaration
-    for (bool matched = true; matched;)
-    {
-      matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
-        (!isVolatile && (isVolatile = MatchIdentifier("volatile")));
-    }
-
-    // Store the cv-ness of the last indirection value
-    indirectionQueue.back().isConst = isConst;
-    indirectionQueue.back().isVolatile = isVolatile;
-    isConst = isVolatile = false;
-
-    // Check if there is indeed an indirection
-    bool isReference = MatchSymbol("&");
-    bool isPointer = !isReference && MatchSymbol("*");
-    if (!isReference && !isPointer)
-      break;
-
-    // Add the indirection
-    indirectionQueue.emplace_back(Indirection{ isReference, isPointer, false, false });
-  } while (true);
-     
-  size_t indirectionCount = indirectionQueue.size();
-  while (!indirectionQueue.empty())
-  {
-    Indirection indirection = indirectionQueue.back();
-    indirectionQueue.pop_back();
-
-    writer_.StartObject();
-
-    if (indirection.isConst)
-    {
-      writer_.String("const");
-      writer_.Bool(indirection.isConst);
-    }
-
-    if (indirection.isVolatile)
-    {
-      writer_.String("volatile");
-      writer_.Bool(indirection.isVolatile);
-    }
-    
-    if (!indirection.isPointer && !indirection.isReference)
-    {
-      writer_.String("type");
-      writer_.String("literal");
-
-      writer_.String("name");
-      writer_.String(declarator.c_str());
-    }
-    else if (indirection.isPointer)
-    {
-      writer_.String("type");
-      writer_.String("pointer");
-
-      writer_.String("baseType");
-    }
-    else if (indirection.isReference)
-    {
-      writer_.String("type");
-      writer_.String("reference");
-
-      writer_.String("baseType");
-    }
-  }
-
-  for (size_t i = 0; i < indirectionCount; ++i)
-    writer_.EndObject();
+  std::unique_ptr<TypeNode> node = ParseTypeNode();
+  TypeNodeWriter writer(writer_);
+  writer.VisitNode(*node);
 }
 
 //-------------------------------------------------------------------------------------------------
-std::string Parser::ParseTypename()
+std::unique_ptr<TypeNode> Parser::ParseTypeNode()
 {
+  std::unique_ptr<TypeNode> node;
+  Token token;
+
+  bool isConst = false, isVolatile = false, isMutable = false;
+  for (bool matched = true; matched;)
+  {
+    matched = (!isConst && (isConst = MatchIdentifier("const"))) ||
+      (!isVolatile && (isVolatile = MatchIdentifier("volatile"))) ||
+      (!isMutable && (isMutable = MatchIdentifier("mutable")));
+  }
+
+  // Parse a literal value
+  std::string declarator = ParseTypeNodeDeclarator();
+
+  // Postfix const specifier
+  isConst |= MatchIdentifier("const");
+
+  // Template?
+  if (MatchSymbol("<"))
+  {
+    std::unique_ptr<TemplateNode> templateNode(new TemplateNode(declarator));
+    do
+    {
+      templateNode->arguments.emplace_back(ParseTypeNode());      
+    } while (MatchSymbol(","));
+
+    if (!MatchSymbol(">"))
+      throw; // Expected >
+
+    node.reset(templateNode.release());
+  }
+  else
+  {
+    node.reset(new LiteralNode(declarator));
+  }
+
+  // Store gathered stuff
+  node->isConst = isConst;
+
+  // Check reference or pointer types
+  while (GetToken(token))
+  {
+    if (token.token == "&")
+      node.reset(new ReferenceNode(std::move(node)));
+    else if (token.token == "&&")
+      node.reset(new LReferenceNode(std::move(node)));
+    else if (token.token == "*")
+      node.reset(new PointerNode(std::move(node)));
+    else
+    {
+      UngetToken(token);
+      break;
+    }
+
+    if (MatchIdentifier("const"))
+      node->isConst = true;
+  }
+
+  // Function pointer?
+  if (MatchSymbol("("))
+  {
+    // Parse void(*)(args, ...)
+    //            ^
+    //            |
+    if (MatchSymbol("*"))
+    {
+      Token token;
+      GetToken(token);
+      if (token.token != ")" || (token.tokenType != TokenType::kIdentifier && !MatchSymbol(")")))
+        throw;
+    }
+
+    // Parse arguments
+    std::unique_ptr<FunctionNode> funcNode(new FunctionNode());
+    funcNode->returns = std::move(node);
+
+    if (!MatchSymbol(")"))
+    {
+      do
+      {
+        std::unique_ptr<FunctionNode::Argument> argument(new FunctionNode::Argument);
+        argument->type = ParseTypeNode();
+
+        // Get , or name identifier
+        if (!GetToken(token))
+          throw; // Unexpected end of file
+
+        // Parse optional name
+        if (token.tokenType == TokenType::kIdentifier)
+          argument->name = token.token;
+        else
+          UngetToken(token);          
+
+        funcNode->arguments.emplace_back(std::move(argument));
+
+      } while (MatchSymbol(","));
+      if (!MatchSymbol(")"))
+        throw;
+    }
+
+    node = std::move(funcNode);
+  }
+
+  // This stuff refers to the top node
+  node->isVolatile = isVolatile;
+  node->isMutable = isMutable;
+
+  return std::move(node);
+}
+
+//-------------------------------------------------------------------------------------------------
+std::string Parser::ParseTypeNodeDeclarator()
+{
+  // Skip optional forward declaration specifier
+  MatchIdentifier("class");
+  MatchIdentifier("struct");
+  MatchIdentifier("typename");
+
+  // Parse a type name 
   std::string declarator;
   Token token;
   bool first = true;
@@ -756,29 +923,13 @@ std::string Parser::ParseTypename()
 
   } while (true);
 
-  // Parse template arguments
-  if (MatchSymbol("<"))
-  {
-    declarator += "<";
-    int templateCount = 1;
-    int tokenCount = 0;
-    while (templateCount > 0)
-    {
-      Token token;
-      GetToken(token);
-      if (token.token == "<")
-        templateCount++;
-      else if (token.token == ">")
-        templateCount--;
-      else if(tokenCount > 0)
-        declarator += " ";
-      
-      declarator += token.token;
-      tokenCount++;
-    }
-  }
-
   return declarator;
+}
+
+//-------------------------------------------------------------------------------------------------
+std::string Parser::ParseTypename()
+{
+  return "";
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -825,7 +976,7 @@ void Parser::ParseCustomMacro(Token & token, const std::string& macroName)
   writer_.String("name");
   writer_.String(macroName.c_str());
   writer_.String("line");
-  writer_.Uint(token.startLine);
+  writer_.Uint((unsigned) token.startLine);
 
   WriteCurrentAccessControlType();
 

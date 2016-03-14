@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <string>
 
 struct Token;
 
@@ -19,7 +20,7 @@ public:
   void Reset(const char* input, std::size_t startingLine = 1);
 
   /// Parses a token from the stream
-  bool GetToken(Token& token, bool angleBracketsForStrings = false);
+  bool GetToken(Token& token, bool angleBracketsForStrings = false, bool seperateBraces = false);
 
   /// Parses an identifier from the stream
   bool GetIdentifier(Token& token);
@@ -77,4 +78,14 @@ protected:
 
   /// The cursor line of the the last read character
   std::size_t prevCursorLine_;
+
+  /// Stores the last comment block
+  struct Comment {
+    std::string text;
+    std::size_t startLine;
+    std::size_t endLine;
+  };
+
+  Comment comment_;
+  Comment lastComment_;
 };

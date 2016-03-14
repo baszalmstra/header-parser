@@ -2,6 +2,7 @@
 
 #include "tokenizer.h"
 #include "options.h"
+#include "type_node.h"
 #include <string>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
@@ -57,8 +58,14 @@ protected:
 
   void WriteAccessControlType(AccessControlType type);
   void ParseClass(Token &token);
-  void ParseFunction(Token &token);
+  void ParseFunction(Token &token, const std::string& macroName);
+
+  void ParseComment();
+
   void ParseType();
+
+  std::unique_ptr<TypeNode> ParseTypeNode();
+  std::string ParseTypeNodeDeclarator();
 
   std::string ParseTypename();
 

@@ -3,6 +3,8 @@
 #include <string>
 #include <cctype>
 #include <stdexcept>
+#include <vector>
+#include <sstream>
 
 namespace {
   static const char EndOfFileChar = std::char_traits<char>::to_char_type(std::char_traits<char>::eof());
@@ -67,11 +69,28 @@ char Tokenizer::peek() const
 //--------------------------------------------------------------------------------------------------
 char Tokenizer::GetLeadingChar()
 {
+  if (!comment_.text.empty())
+    lastComment_ = comment_;
+
+  comment_.text = "";
+  comment_.startLine = cursorLine_;
+  comment_.endLine = cursorLine_;
+
   char c;
+  bool lineHasComment = false;
   for(c = GetChar(); !is_eof(); c = GetChar())
   {
     // If this is a whitespace character skip it
     std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
+
+    // In case of a new line
+    if (c == '\n')
+    {
+      if (!comment_.text.empty())
+        comment_.text += "\n";
+      continue;
+    }
+
     if(std::isspace(intc) || std::iscntrl(intc))
       continue;
 
@@ -79,10 +98,63 @@ char Tokenizer::GetLeadingChar()
     char next = peek();
     if(c == '/' && next == '/')
     {
-      // Search for the end of the line
-      for (c = GetChar();
-           c != EndOfFileChar && c != '\n';
-           c = GetChar());
+      std::vector<std::string> lines;
+
+      uint32_t indentationLastLine = 0;
+      while (!is_eof() && c == '/' && next == '/')
+      {
+        // Search for the end of the line
+        std::string line;
+        for (c = GetChar();
+          c != EndOfFileChar && c != '\n';
+          c = GetChar())
+        {
+          line += c;
+        }
+        
+        // Store the line
+        size_t lastSlashIndex = line.find_first_not_of("/");
+        if (lastSlashIndex == std::string::npos)
+          line = "";
+        else
+          line = line.substr(lastSlashIndex);
+
+        size_t firstCharIndex = line.find_first_not_of(" \t");
+        if (firstCharIndex == std::string::npos)
+          line = "";
+        else
+          line = line.substr(firstCharIndex);
+
+        if (firstCharIndex > indentationLastLine && !lines.empty())
+          lines.back() += std::string(" ") + line;
+        else
+        {
+          lines.emplace_back(std::move(line));
+          indentationLastLine = firstCharIndex;
+        }
+
+        // Check the next line
+        while (!is_eof() && std::isspace(c = GetChar()));
+
+        if (!is_eof())
+          next = peek();
+      }
+
+      // Unget previously get char
+      if (!is_eof())
+        UngetChar();
+
+      // Build comment string
+      std::stringstream ss;
+      for (size_t i = 0; i < lines.size(); ++i)
+      {
+        if (i > 0)
+          ss << "\n";
+        ss << lines[i];
+      }
+
+      comment_.text = ss.str();
+      comment_.endLine = cursorLine_;
 
       // Go to the next
       continue;
@@ -92,13 +164,49 @@ char Tokenizer::GetLeadingChar()
     if(c == '/' && next == '*')
     {
       // Search for the end of the block comment
+      std::vector<std::string> lines;
+      std::string line;
       for (c = GetChar(), next = peek();
-           c != EndOfFileChar && (c != '*' || next != '/');
-           c = GetChar(), next = peek());
+        c != EndOfFileChar && (c != '*' || next != '/');
+        c = GetChar(), next = peek())
+      {
+        if (c == '\n')
+        {
+          if (!lines.empty() || !line.empty())
+            lines.emplace_back(line);
+          line.clear();
+        }
+        else
+        {
+          if (!line.empty() || !(std::isspace(c) || c == '*'))
+            line += c;
+        }
+      }
 
       // Skip past the slash
       if(c != EndOfFileChar)
         GetChar();
+
+      // Skip past new lines and spaces
+      while (!is_eof() && std::isspace(c = GetChar()));
+      if (!is_eof())
+        UngetChar();
+
+      // Remove empty lines from the back
+      while (!lines.empty() && lines.back().empty())
+        lines.pop_back();
+
+      // Build comment string
+      std::stringstream ss;
+      for (size_t i = 0; i < lines.size(); ++i)
+      {
+        if (i > 0)
+          ss << "\n";
+        ss << lines[i]; 
+      }
+
+      comment_.text = ss.str();
+      comment_.endLine = cursorLine_;
 
       // Move to the next character
       continue;
@@ -106,12 +214,12 @@ char Tokenizer::GetLeadingChar()
 
     break;
   }
-
+  
   return c;
 }
 
 //--------------------------------------------------------------------------------------------------
-bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings)
+bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings, bool seperateBraces)
 {
   // Get the next character
   char c = GetLeadingChar();
@@ -272,7 +380,7 @@ bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings)
     const char d = GetChar();
     if(PAIR('<', '<') ||
        PAIR('-', '>') ||
-       PAIR('>', '>') ||
+       (!seperateBraces && PAIR('>', '>')) ||
        PAIR('!', '=') ||
        PAIR('<', '=') ||
        PAIR('>', '=') ||
@@ -352,7 +460,7 @@ bool Tokenizer::MatchIdentifier(const char *identifier)
 bool Tokenizer::MatchSymbol(const char *symbol)
 {
   Token token;
-  if(GetToken(token))
+  if(GetToken(token, false, std::char_traits<char>::length(symbol) == 1 && symbol[0] == '>'))
   {
     if(token.tokenType == TokenType::kSymbol && token.token == symbol)
       return true;
