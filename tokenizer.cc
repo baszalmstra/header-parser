@@ -77,7 +77,6 @@ char Tokenizer::GetLeadingChar()
   comment_.endLine = cursorLine_;
 
   char c;
-  bool lineHasComment = false;
   for(c = GetChar(); !is_eof(); c = GetChar())
   {
     // If this is a whitespace character skip it
