@@ -41,28 +41,29 @@ protected:
   /// Called to parse the next statement. Returns false if there are no more statements.
   bool ParseStatement();
   bool ParseDeclaration(Token &token);
-  void ParseDirective();
+  bool ParseDirective();
   bool SkipDeclaration(Token &token);
-  void ParseEnum(Token &token);
-  void ParseMacroMeta();
-  void ParseMetaSequence();
+  bool ParseProperty(Token &token);
+  bool ParseEnum(Token &token);
+  bool ParseMacroMeta();
+  bool ParseMetaSequence();
 
   void PushScope(const std::string& name, ScopeType scopeType, AccessControlType accessControlType);
   void PopScope();
 
-  void ParseNamespace();
+  bool ParseNamespace();
   bool ParseAccessControl(const Token& token, AccessControlType& type);
 
   AccessControlType current_access_control_type() const { return topScope_->currentAccessControlType; }
   void WriteCurrentAccessControlType();
 
   void WriteAccessControlType(AccessControlType type);
-  void ParseClass(Token &token);
-  void ParseFunction(Token &token, const std::string& macroName);
+  bool ParseClass(Token &token);
+  bool ParseFunction(Token &token, const std::string& macroName);
 
-  void ParseComment();
+  bool ParseComment();
 
-  void ParseType();
+  bool ParseType();
 
   std::unique_ptr<TypeNode> ParseTypeNode();
   std::string ParseTypeNodeDeclarator();
@@ -70,7 +71,8 @@ protected:
   std::string ParseTypename();
 
   void WriteToken(const Token &token);
-  void ParseCustomMacro(Token & token, const std::string& macroName);
+  bool ParseCustomMacro(Token & token, const std::string& macroName);
+
 private:
   Options options_;
   rapidjson::StringBuffer buffer_;
@@ -85,8 +87,6 @@ private:
 
   Scope scopes_[64];
   Scope *topScope_;
-
-  void ParseProperty(Token &token);
 };
 
 

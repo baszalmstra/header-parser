@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <vector>
 #include <sstream>
+#include <cstdarg>
 
 namespace {
   static const char EndOfFileChar = std::char_traits<char>::to_char_type(std::char_traits<char>::eof());
@@ -471,15 +472,30 @@ bool Tokenizer::MatchSymbol(const char *symbol)
 }
 
 //--------------------------------------------------------------------------------------------------
-void Tokenizer::RequireIdentifier(const char *identifier)
+bool Tokenizer::RequireIdentifier(const char *identifier)
 {
   if(!MatchIdentifier(identifier))
-    throw;
+    return Error("Missing identifier %s", identifier);
+  return true;
 }
 
 //--------------------------------------------------------------------------------------------------
-void Tokenizer::RequireSymbol(const char *symbol)
+bool Tokenizer::RequireSymbol(const char *symbol)
 {
-  if(!MatchSymbol(symbol))
-    throw;
+  if (!MatchSymbol(symbol))
+    return Error("Missing symbol %s", symbol);
+  return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+bool Tokenizer::Error(const char* fmt, ...)
+{
+  char buffer[512];
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buffer, 512, fmt, args);
+  va_end(args);
+  printf("ERROR: %d:%d: %s", cursorLine_, 0, buffer);
+  hasError_ = true;
+  return false;
 }

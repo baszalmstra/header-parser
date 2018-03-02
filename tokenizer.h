@@ -55,10 +55,14 @@ protected:
   bool MatchSymbol(const char* symbol);
 
   /// Advances the tokenizer past the expected identifier or errors if the symbol is not encountered.
-  void RequireIdentifier(const char* identifier);
+  bool RequireIdentifier(const char* identifier);
 
   /// Advances the tokenizer past the expected symbol or errors if the symbol is not encountered.
-  void RequireSymbol(const char* symbol);
+  bool RequireSymbol(const char* symbol);
+
+protected:
+  bool Error(const char* fmt, ...);
+  bool HasError() const { return hasError_; }
 
 protected:
   /// The input
@@ -88,4 +92,6 @@ protected:
 
   Comment comment_;
   Comment lastComment_;
+
+  bool hasError_ = false;
 };

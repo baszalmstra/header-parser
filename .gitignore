@@ -31,3 +31,5 @@ build
 
 # Qt Creator
 CMakeLists.txt.user
+
+.vs
