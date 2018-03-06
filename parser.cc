@@ -673,12 +673,13 @@ bool Parser::ParseFunction(Token &token, const std::string& macroName)
   WriteCurrentAccessControlType();
 
   // Process method specifiers in any particular order
-  bool isVirtual = false, isInline = false, isConstExpr = false;
+  bool isVirtual = false, isInline = false, isConstExpr = false, isStatic = false;
   for(bool matched = true; matched;)
   {
     matched = (!isVirtual && (isVirtual = MatchIdentifier("virtual"))) ||
         (!isInline && (isInline = MatchIdentifier("inline"))) ||
-        (!isConstExpr && (isConstExpr = MatchIdentifier("constexpr")));
+        (!isConstExpr && (isConstExpr = MatchIdentifier("constexpr"))) ||
+        (!isStatic && (isStatic = MatchIdentifier("static")));
   }
 
   // Write method specifiers
@@ -696,6 +697,11 @@ bool Parser::ParseFunction(Token &token, const std::string& macroName)
   {
     writer_.String("constexpr");
     writer_.Bool(isConstExpr);
+  }
+  if (isStatic)
+  {
+    writer_.String("static");
+    writer_.Bool(isStatic);
   }
 
   // Parse the return type
