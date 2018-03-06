@@ -100,7 +100,7 @@ char Tokenizer::GetLeadingChar()
     {
       std::vector<std::string> lines;
 
-      uint32_t indentationLastLine = 0;
+      size_t indentationLastLine = 0;
       while (!is_eof() && c == '/' && next == '/')
       {
         // Search for the end of the line
@@ -495,7 +495,7 @@ bool Tokenizer::Error(const char* fmt, ...)
   va_start(args, fmt);
   vsnprintf(buffer, 512, fmt, args);
   va_end(args);
-  printf("ERROR: %d:%d: %s", cursorLine_, 0, buffer);
+  printf("ERROR: %d:%d: %s", static_cast<int>(cursorLine_), 0, buffer);
   hasError_ = true;
   return false;
 }
