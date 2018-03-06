@@ -619,13 +619,28 @@ bool Parser::ParseProperty(Token &token)
 
   if (!ParseMacroMeta())
     return false;
+
   WriteCurrentAccessControlType();
 
+  // Process method specifiers in any particular order
+  bool isMutable = false, isStatic = false;
+  for (bool matched = true; matched;)
+  {
+    matched = (!isMutable && (isMutable = MatchIdentifier("mutable"))) ||
+      (!isStatic && (isStatic = MatchIdentifier("static")));
+  }
+
   // Check mutable
-  bool isMutable = MatchIdentifier("mutable");
   if(isMutable)
   {
     writer_.String("mutable");
+    writer_.Bool(true);
+  }
+
+  // Check mutable
+  if (isStatic)
+  {
+    writer_.String("static");
     writer_.Bool(true);
   }
 
