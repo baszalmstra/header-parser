@@ -39,6 +39,9 @@ void Tokenizer::Reset(const char* input, std::size_t startingLine)
 //--------------------------------------------------------------------------------------------------
 char Tokenizer::GetChar()
 {
+  if is_eof() {
+    return EndOfFileChar;
+  }
   char c = input_[cursorPos_];
 
   prevCursorPos_ = cursorPos_;
@@ -55,6 +58,9 @@ char Tokenizer::GetChar()
 //--------------------------------------------------------------------------------------------------
 void Tokenizer::UngetChar()
 {
+  if is_eof() {
+    return ;
+  }
   cursorLine_ = prevCursorLine_;
   cursorPos_ = prevCursorPos_;
 }
