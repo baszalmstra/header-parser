@@ -38,11 +38,14 @@ void Tokenizer::Reset(const char* input, std::size_t startingLine)
 
 //--------------------------------------------------------------------------------------------------
 char Tokenizer::GetChar()
-{
-  char c = input_[cursorPos_];
-
+{ 
   prevCursorPos_ = cursorPos_;
   prevCursorLine_ = cursorLine_;
+
+  if (cursorPos_ >= inputLength_)
+    return EndOfFileChar;
+
+  char c = input_[cursorPos_];
 
   // New line moves the cursor to the new line
   if(c == '\n')
