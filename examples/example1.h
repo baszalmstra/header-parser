@@ -23,4 +23,11 @@ namespace test
 		TPROPERTY()
 		int ThisIsAProperty;
   };
+
+	TCLASS()
+	template<typename T, typename Base=Foo>
+	class TemplatedFoo : public Base
+  {
+
+	};
 }

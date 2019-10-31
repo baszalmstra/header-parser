@@ -33,3 +33,8 @@ build
 CMakeLists.txt.user
 
 .vs
+CMakeSettings.json
+
+# CLion files
+cmake-build-*/
+.idea
