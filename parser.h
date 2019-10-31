@@ -59,6 +59,7 @@ protected:
 
   void WriteAccessControlType(AccessControlType type);
   bool ParseClass(Token &token);
+  bool ParseClassTemplate();
   bool ParseFunction(Token &token, const std::string& macroName);
 
   bool ParseComment();
@@ -87,6 +88,8 @@ private:
 
   Scope scopes_[64];
   Scope *topScope_;
+
+    bool ParseClassTemplateArgument();
 };
 
 

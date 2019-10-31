@@ -542,6 +542,9 @@ bool Parser::ParseClass(Token &token)
   if (!ParseMacroMeta())
     return false;
 
+  if(MatchIdentifier("template") && !ParseClassTemplate())
+    return false;
+
   if (!RequireIdentifier("class"))
     return false;
 
@@ -1056,6 +1059,71 @@ bool Parser::ParseCustomMacro(Token & token, const std::string& macroName)
 
   if (!ParseMacroMeta())
     return false;
+
+  writer_.EndObject();
+  return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+bool Parser::ParseClassTemplate()
+{
+  writer_.String("template");
+  writer_.StartObject();
+
+  if(!RequireSymbol("<"))
+    return false;
+
+  writer_.String("arguments");
+  writer_.StartArray();
+
+  do
+  {
+    if(!ParseClassTemplateArgument())
+      return false;
+  } while(MatchSymbol(","));
+
+  writer_.EndArray();
+
+  if(!RequireSymbol(">"))
+    return false;
+  writer_.EndObject();
+
+  return true;
+}
+
+//-------------------------------------------------------------------------------------------------
+bool Parser::ParseClassTemplateArgument()
+{
+  writer_.StartObject();
+
+  Token token;
+  if(!GetToken(token) || token.tokenType != TokenType::kIdentifier || !(token.token == "class" || token.token == "typename"))
+  {
+    Error("expected either 'class' or 'identifier' in template argument");
+    return false;
+  }
+
+  writer_.String("typeParameterKey");
+  writer_.String(token.token.c_str());
+
+  // Parse the name
+  GetToken(token);
+  if(token.tokenType != TokenType::kIdentifier)
+  {
+    Error("expected identifier");
+    return false;
+  }
+
+  writer_.String("name");
+  writer_.String(token.token.c_str());
+
+  // Optionally check if there is a default initializer
+  if(MatchSymbol("="))
+  {
+    writer_.String("defaultType");
+    if(!ParseType())
+      return false;
+  }
 
   writer_.EndObject();
   return true;
