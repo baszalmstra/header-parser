@@ -39,12 +39,15 @@ void Tokenizer::Reset(const char* input, std::size_t startingLine)
 //--------------------------------------------------------------------------------------------------
 char Tokenizer::GetChar()
 { 
-  prevCursorPos_ = cursorPos_;
+	prevCursorPos_ = cursorPos_;
   prevCursorLine_ = cursorLine_;
 
-  if (cursorPos_ >= inputLength_)
+  if(is_eof())
+	{
+		++cursorPos_;	// Do continue so UngetChar does what you think it does
     return EndOfFileChar;
-
+	}
+	
   char c = input_[cursorPos_];
 
   // New line moves the cursor to the new line
@@ -230,7 +233,7 @@ bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings, bool sepera
   std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
   std::char_traits<char>::int_type intp = std::char_traits<char>::to_int_type(p);
 
-  if(!std::char_traits<char>::not_eof(intc))
+  if(is_eof())
   {
     UngetChar();
     return false;
