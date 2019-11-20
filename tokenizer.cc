@@ -84,7 +84,7 @@ char Tokenizer::GetLeadingChar()
   comment_.endLine = cursorLine_;
 
   char c;
-  for(c = GetChar(); !is_eof(); c = GetChar())
+  for(c = GetChar(); c != EndOfFileChar; c = GetChar())
   {
     // If this is a whitespace character skip it
     std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
@@ -233,7 +233,7 @@ bool Tokenizer::GetToken(Token &token, bool angleBracketsForStrings, bool sepera
   std::char_traits<char>::int_type intc = std::char_traits<char>::to_int_type(c);
   std::char_traits<char>::int_type intp = std::char_traits<char>::to_int_type(p);
 
-  if(is_eof())
+  if(c == EndOfFileChar)
   {
     UngetChar();
     return false;
