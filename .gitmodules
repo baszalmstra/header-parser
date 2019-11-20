@@ -9,4 +9,4 @@
 	url = ../../jarro2783/cxxopts.git
 [submodule "external/tclap"]
 	path = external/tclap
-	url = ../../eile/tclap.git
+	url = ../../mirror/tclap.git
