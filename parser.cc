@@ -664,7 +664,26 @@ bool Parser::ParseProperty(Token &token)
   writer_.String("name");
   writer_.String(nameToken.token.c_str());
 
+  // Parse array
+  writer_.String("elements");
+  if (MatchSymbol("["))
+  {
+	  Token arrayToken;
+	  if(!GetConst(arrayToken))
+		  if(!GetIdentifier(arrayToken))
+			  throw; // Expected a property name
+	  writer_.String(arrayToken.token.c_str());
+
+	  if(!MatchSymbol("]"))
+		  throw;
+  }
+  else
+  {
+	writer_.Null();
+  }
+
   writer_.EndObject();
+
 
   // Skip until the end of the definition
   Token t;

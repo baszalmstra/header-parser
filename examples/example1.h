@@ -39,6 +39,12 @@ namespace test
 TCLASS()
 struct Test {
 	TPROPERTY()
+	int ThisIsAPublicArray1[1];
+	
+	TPROPERTY()
+	int ThisIsAPublicArray2[CONST];
+
+	TPROPERTY()
 	int ThisIsAPublicProperty;
 private:
 	TPROPERTY()

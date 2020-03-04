@@ -22,6 +22,9 @@ public:
   /// Parses a token from the stream
   bool GetToken(Token& token, bool angleBracketsForStrings = false, bool seperateBraces = false);
 
+  /// Parses an constant from the stream
+  bool GetConst(Token& token);
+
   /// Parses an identifier from the stream
   bool GetIdentifier(Token& token);
 
