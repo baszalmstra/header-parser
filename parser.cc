@@ -545,8 +545,12 @@ bool Parser::ParseClass(Token &token)
   if(MatchIdentifier("template") && !ParseClassTemplate())
     return false;
 
-  if (!RequireIdentifier("class"))
+  bool isStruct = MatchIdentifier("struct");
+  if (!(MatchIdentifier("class") || isStruct))
     return false;
+
+  writer_.String("isstruct");
+  writer_.Bool(isStruct);
 
   // Get the class name
   Token classNameToken;
@@ -594,7 +598,7 @@ bool Parser::ParseClass(Token &token)
   writer_.String("members");
   writer_.StartArray();
 
-  PushScope(classNameToken.token, ScopeType::kClass, AccessControlType::kPrivate);
+  PushScope(classNameToken.token, ScopeType::kClass, isStruct ? AccessControlType::kPublic : AccessControlType::kPrivate);
 
   while (!MatchSymbol("}"))
     if (!ParseStatement())
