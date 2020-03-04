@@ -38,6 +38,7 @@ CMakeLists.txt.user
 
 # Visual Studio files
 *.vcxproj
+*.vcxproj.user
 *.vcxproj.filters
 *.sln
 .vs

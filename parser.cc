@@ -547,7 +547,7 @@ bool Parser::ParseClass(Token &token)
 
   bool isStruct = MatchIdentifier("struct");
   if (!(MatchIdentifier("class") || isStruct))
-    return false;
+    return Error("Missing identifier class or struct");
 
   writer_.String("isstruct");
   writer_.Bool(isStruct);
