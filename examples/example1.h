@@ -7,6 +7,8 @@ namespace test
 	TCLASS()
 	class Foo : public Bar 
 	{
+		TPROPERTY()
+		int ThisIsAPrivateProperty;
 	protected:
 		TFUNC(Arg=3)
 		bool ProtectedFunction(std::vector<int> args) const;
@@ -24,6 +26,8 @@ namespace test
 		int ThisIsAProperty;
   };
 
+
+
 	TCLASS()
 	template<typename T, typename Base=Foo>
 	class TemplatedFoo : public Base
@@ -31,3 +35,12 @@ namespace test
 
 	};
 }
+
+TCLASS()
+struct Test {
+	TPROPERTY()
+	int ThisIsAPublicProperty;
+private:
+	TPROPERTY()
+	int ThisIsAPrivateProperty;
+};

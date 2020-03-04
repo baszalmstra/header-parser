@@ -28,12 +28,25 @@
 *.app
 
 build
+Debug
+RelWithDebInfo
+Win32
+header-parser.dir
 
 # Qt Creator
 CMakeLists.txt.user
 
+# Visual Studio files
+*.vcxproj
+*.vcxproj.filters
+*.sln
 .vs
+
+# CMAKE files
 CMakeSettings.json
+CMakeCache.txt
+cmake_install.cmake
+CMakeFiles
 
 # CLion files
 cmake-build-*/
