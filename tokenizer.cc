@@ -428,6 +428,19 @@ bool Tokenizer::is_eof() const
 }
 
 //--------------------------------------------------------------------------------------------------
+bool Tokenizer::GetConst(Token &token)
+{
+	if (!GetToken(token))
+		return false;
+
+	if (token.tokenType == TokenType::kConst)
+		return true;
+
+	UngetToken(token);
+	return false;
+}
+
+//--------------------------------------------------------------------------------------------------
 bool Tokenizer::GetIdentifier(Token &token)
 {
   if(!GetToken(token))
