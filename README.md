@@ -46,6 +46,9 @@ namespace test
   public:
     TPROPERTY()
     int ThisIsAProperty;
+
+    TPROPERTY()
+    int ThisIsAArray[42];
   };
 }
 ```
@@ -64,7 +67,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
         "members": [
             {
                 "type": "class",
-                "line": 12,
+                "line": 5,
                 "meta": {},
                 "isstruct": false,
                 "name": "Foo",
@@ -81,7 +84,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                     {
                         "type": "function",
                         "macro": "TFUNC",
-                        "line": 16,
+                        "line": 9,
                         "meta": {
                             "Arg": 3
                         },
@@ -110,7 +113,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                     },
                     {
                         "type": "enum",
-                        "line": 20,
+                        "line": 13,
                         "access": "public",
                         "meta": {},
                         "name": "Enum",
@@ -126,14 +129,27 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                     },
                     {
                         "type": "property",
-                        "line": 28,
+                        "line": 21,
                         "meta": {},
                         "access": "public",
                         "dataType": {
                             "type": "literal",
                             "name": "int"
                         },
-                        "name": "ThisIsAProperty"
+                        "name": "ThisIsAProperty",
+                        "elements": null
+                    },
+                    {
+                        "type": "property",
+                        "line": 24,
+                        "meta": {},
+                        "access": "public",
+                        "dataType": {
+                            "type": "literal",
+                            "name": "int"
+                        },
+                        "name": "ThisIsAArray",
+                        "elements": "42"
                     }
                 ]
             }
