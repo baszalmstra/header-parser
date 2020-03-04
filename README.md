@@ -66,6 +66,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                 "type": "class",
                 "line": 12,
                 "meta": {},
+                "isstruct": false,
                 "name": "Foo",
                 "parents": [
                     {
