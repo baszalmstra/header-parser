@@ -10,4 +10,5 @@ struct Options
   std::string enumNameMacro;
   std::string propertyNameMacro;
   std::vector<std::string> customMacros;
+  std::string constructorNameMacro;
 };

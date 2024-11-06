@@ -25,6 +25,7 @@ int main(int argc, char** argv)
 
     ValueArg<std::string> enumName("e", "enum", "The name of the enum macro", false, "ENUM", "", cmd);
     ValueArg<std::string> className("c", "class", "The name of the class macro", false, "CLASS", "", cmd);
+    ValueArg<std::string> constructorName("q", "constructor", "The name of the constructor macro", false, "CONSTRUCTOR", "", cmd);
     MultiArg<std::string> functionName("f", "function", "The name of the function macro", false, "", cmd);
     ValueArg<std::string> propertyName("p", "property", "The name of the property macro", false, "PROPERTY", "", cmd);
     MultiArg<std::string> customMacro("m", "macro", "Custom macro names to parse", false, "", cmd);
@@ -38,12 +39,13 @@ int main(int argc, char** argv)
     options.functionNameMacro = functionName.getValue();
     options.customMacros = customMacro.getValue();
     options.propertyNameMacro = propertyName.getValue();
+    options.constructorNameMacro = constructorName.getValue();
   }
   catch (TCLAP::ArgException& e)
   {
     std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
     return -1;
-  }  
+  }
 
   // Open from file
   std::ifstream t(inputFile);

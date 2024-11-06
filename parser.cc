@@ -179,16 +179,18 @@ bool Parser::ParseStatement()
 bool Parser::ParseDeclaration(Token &token)
 {
   std::vector<std::string>::const_iterator customMacroIt;
-  if(token.token == "#")
-    return ParseDirective();
-  else if(token.token == ";")
-    return true; // Empty statement
-  else if(token.token == options_.enumNameMacro)
-    return ParseEnum(token);
+  if (token.token == "#")
+      return ParseDirective();
+  else if (token.token == ";")
+      return true; // Empty statement
+  else if (token.token == options_.enumNameMacro)
+      return ParseEnum(token);
   else if (token.token == options_.classNameMacro)
-    return ParseClass(token);
+      return ParseClass(token);
   else if ((customMacroIt = std::find(options_.functionNameMacro.begin(), options_.functionNameMacro.end(), token.token)) != options_.functionNameMacro.end())
-    return ParseFunction(token, *customMacroIt);
+      return ParseFunction(token, *customMacroIt);
+  else if (token.token == options_.constructorNameMacro)
+      return ParseConstructor(token);
   else if(token.token == options_.propertyNameMacro)
     return ParseProperty(token);
   else if (token.token == "namespace")
@@ -695,6 +697,107 @@ bool Parser::ParseProperty(Token &token)
 }
 
 //--------------------------------------------------------------------------------------------------
+bool Parser::ParseConstructor(Token& token)
+{
+    writer_.StartObject();
+    writer_.String("type");
+    writer_.String("constructor");
+    writer_.String("line");
+    writer_.Uint((unsigned) token.startLine);
+
+    if (!ParseComment()) return false;
+    if (!ParseMacroMeta()) return false;
+
+    WriteCurrentAccessControlType();
+
+    bool isInline = false;
+    for (bool matched = true; matched;)
+    {
+        matched = !isInline && (isInline = MatchIdentifier("inline"));
+    }
+
+    if (isInline)
+    {
+        writer_.String("inline");
+        writer_.Bool(isInline);
+    }
+
+    // Parse the name of the constructor
+    Token nameToken;
+    if (!GetIdentifier(nameToken)) throw;
+
+    writer_.String("name");
+    writer_.String(nameToken.token.c_str());
+
+    writer_.String("arguments");
+    writer_.StartArray();
+
+    // Start argument list from here
+    MatchSymbol("(");
+
+    // Is there an argument list in the first place or is it closed right away?
+    if (!MatchSymbol(")"))
+    {
+        // Walk over all arguments
+        do
+        {
+            writer_.StartObject();
+
+            // Get the type of the argument
+            writer_.String("type");
+            if (!ParseType())
+                return false;
+
+            // Parse the name of the function
+            writer_.String("name");
+            if (!GetIdentifier(nameToken))
+                throw; // Expected identifier
+            writer_.String(nameToken.token.c_str());
+
+            // Parse default value
+            if (MatchSymbol("="))
+            {
+                writer_.String("defaultValue");
+
+                std::string defaultValue;
+                Token token;
+                GetToken(token);
+                if (token.tokenType == TokenType::kConst)
+                    WriteToken(token);
+                else
+                {
+                    do
+                    {
+                        if (token.token == "," ||
+                            token.token == ")")
+                        {
+                            UngetToken(token);
+                            break;
+                        }
+                        defaultValue += token.token;
+                    } while (GetToken(token));
+                    writer_.String(defaultValue.c_str());
+                }
+            }
+
+            writer_.EndObject();
+        } while (MatchSymbol(",")); // Only in case another is expected
+
+        MatchSymbol(")");
+    }
+
+    writer_.EndArray();
+
+    writer_.EndObject();
+
+    // Skip either the ; or the body of the function
+    Token skipToken;
+    if (!SkipDeclaration(skipToken))
+        return false;
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
 bool Parser::ParseFunction(Token &token, const std::string& macroName)
 {
   writer_.StartObject();
@@ -707,7 +810,7 @@ bool Parser::ParseFunction(Token &token, const std::string& macroName)
 
   if (!ParseComment())
     return false;
-  
+
   if (!ParseMacroMeta())
     return false;
 
@@ -776,7 +879,7 @@ bool Parser::ParseFunction(Token &token, const std::string& macroName)
       writer_.String("type");
       if (!ParseType())
         return false;
-      
+
       // Parse the name of the function
       writer_.String("name");
       if (!GetIdentifier(nameToken))

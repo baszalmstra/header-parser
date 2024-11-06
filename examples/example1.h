@@ -14,6 +14,11 @@ namespace test
 		bool ProtectedFunction(std::vector<int> args) const;
 
 	public:
+		TCONSTRUCTOR()
+		Foo();
+		TCONSTRUCTOR(Arg=5)
+		Foo(int value);
+
     TENUM()
       enum Enum
     {

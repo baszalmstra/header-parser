@@ -61,6 +61,7 @@ protected:
   bool ParseClass(Token &token);
   bool ParseClassTemplate();
   bool ParseFunction(Token &token, const std::string& macroName);
+  bool ParseConstructor(Token& token);
 
   bool ParseComment();
 
