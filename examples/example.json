@@ -71,7 +71,8 @@
                         "meta": {},
                         "access": "public",
                         "name": "Foo",
-                        "arguments": []
+                        "arguments": [],
+                        "default": true
                     },
                     {
                         "type": "constructor",

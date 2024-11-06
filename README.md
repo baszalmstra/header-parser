@@ -28,32 +28,60 @@ Given the input file:
 
 namespace test 
 {
-  TCLASS()
-  class Foo : public Bar 
-  {
-  protected:
-    TFUNC(Arg=3)
-    bool ProtectedFunction(std::vector<int> args) const;
+	TCLASS()
+	class Foo : public Bar 
+	{
+		TPROPERTY()
+		int ThisIsAPrivateProperty;
+	protected:
+		TFUNC(Arg=3)
+		bool ProtectedFunction(std::vector<int> args) const;
 
-  public:
+	public:
+		TCONSTRUCTOR()
+		Foo() = default;
+		TCONSTRUCTOR(Arg=5)
+		Foo(int value);
+
     TENUM()
-    enum Enum
+      enum Enum
     {
       FirstValue,
       SecondValue = 3
     };
 
-  public:
-    TPROPERTY()
-    int ThisIsAProperty;
-
-    TPROPERTY()
-    int ThisIsAArray[42];
+	public:
+		TPROPERTY()
+		int ThisIsAProperty;
   };
+
+
+
+	TCLASS()
+	template<typename T, typename Base=Foo>
+	class TemplatedFoo : public Base
+  {
+
+	};
 }
+
+TCLASS()
+struct Test {
+	TPROPERTY()
+	int ThisIsAPublicArray1[1];
+	
+	TPROPERTY()
+	int ThisIsAPublicArray2[CONST];
+
+	TPROPERTY()
+	int ThisIsAPublicProperty;
+private:
+	TPROPERTY()
+	int ThisIsAPrivateProperty;
+};
 ```
 
-When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY` produces the following output:
+When ran with `header-parser example.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY -q TCONSTRUCTOR` produces the following output:
 
 ```json
 [
@@ -67,7 +95,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
         "members": [
             {
                 "type": "class",
-                "line": 5,
+                "line": 7,
                 "meta": {},
                 "isstruct": false,
                 "name": "Foo",
@@ -82,9 +110,21 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                 ],
                 "members": [
                     {
+                        "type": "property",
+                        "line": 10,
+                        "meta": {},
+                        "access": "private",
+                        "dataType": {
+                            "type": "literal",
+                            "name": "int"
+                        },
+                        "name": "ThisIsAPrivateProperty",
+                        "elements": null
+                    },
+                    {
                         "type": "function",
                         "macro": "TFUNC",
-                        "line": 9,
+                        "line": 13,
                         "meta": {
                             "Arg": 3
                         },
@@ -112,8 +152,35 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                         "const": true
                     },
                     {
+                        "type": "constructor",
+                        "line": 17,
+                        "meta": {},
+                        "access": "public",
+                        "name": "Foo",
+                        "arguments": [],
+                        "default": true
+                    },
+                    {
+                        "type": "constructor",
+                        "line": 19,
+                        "meta": {
+                            "Arg": 5
+                        },
+                        "access": "public",
+                        "name": "Foo",
+                        "arguments": [
+                            {
+                                "type": {
+                                    "type": "literal",
+                                    "name": "int"
+                                },
+                                "name": "value"
+                            }
+                        ]
+                    },
+                    {
                         "type": "enum",
-                        "line": 13,
+                        "line": 22,
                         "access": "public",
                         "meta": {},
                         "name": "Enum",
@@ -129,7 +196,7 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                     },
                     {
                         "type": "property",
-                        "line": 21,
+                        "line": 30,
                         "meta": {},
                         "access": "public",
                         "dataType": {
@@ -138,20 +205,98 @@ When ran with `header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
                         },
                         "name": "ThisIsAProperty",
                         "elements": null
-                    },
-                    {
-                        "type": "property",
-                        "line": 24,
-                        "meta": {},
-                        "access": "public",
-                        "dataType": {
-                            "type": "literal",
-                            "name": "int"
-                        },
-                        "name": "ThisIsAArray",
-                        "elements": "42"
                     }
                 ]
+            },
+            {
+                "type": "class",
+                "line": 36,
+                "meta": {},
+                "template": {
+                    "arguments": [
+                        {
+                            "typeParameterKey": "typename",
+                            "name": "T"
+                        },
+                        {
+                            "typeParameterKey": "typename",
+                            "name": "Base",
+                            "defaultType": {
+                                "type": "literal",
+                                "name": "Foo"
+                            }
+                        }
+                    ]
+                },
+                "isstruct": false,
+                "name": "TemplatedFoo",
+                "parents": [
+                    {
+                        "access": "public",
+                        "name": {
+                            "type": "literal",
+                            "name": "Base"
+                        }
+                    }
+                ],
+                "members": []
+            }
+        ]
+    },
+    {
+        "type": "class",
+        "line": 44,
+        "meta": {},
+        "isstruct": true,
+        "name": "Test",
+        "members": [
+            {
+                "type": "property",
+                "line": 46,
+                "meta": {},
+                "access": "public",
+                "dataType": {
+                    "type": "literal",
+                    "name": "int"
+                },
+                "name": "ThisIsAPublicArray1",
+                "elements": "1"
+            },
+            {
+                "type": "property",
+                "line": 49,
+                "meta": {},
+                "access": "public",
+                "dataType": {
+                    "type": "literal",
+                    "name": "int"
+                },
+                "name": "ThisIsAPublicArray2",
+                "elements": "CONST"
+            },
+            {
+                "type": "property",
+                "line": 52,
+                "meta": {},
+                "access": "public",
+                "dataType": {
+                    "type": "literal",
+                    "name": "int"
+                },
+                "name": "ThisIsAPublicProperty",
+                "elements": null
+            },
+            {
+                "type": "property",
+                "line": 55,
+                "meta": {},
+                "access": "private",
+                "dataType": {
+                    "type": "literal",
+                    "name": "int"
+                },
+                "name": "ThisIsAPrivateProperty",
+                "elements": null
             }
         ]
     }

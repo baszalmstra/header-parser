@@ -1,4 +1,4 @@
-// Run with: header-parser example1.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY
+// Run with: header-parser example.h -c TCLASS -e TENUM -f TFUNC -p TPROPERTY -q TCONSTRUCTOR
 
 #include <vector>
 
@@ -15,7 +15,7 @@ namespace test
 
 	public:
 		TCONSTRUCTOR()
-		Foo();
+		Foo() = default;
 		TCONSTRUCTOR(Arg=5)
 		Foo(int value);
 
