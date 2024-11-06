@@ -788,6 +788,17 @@ bool Parser::ParseConstructor(Token& token)
 
     writer_.EndArray();
 
+    // Is default?
+    if (MatchSymbol("="))
+    {
+        Token token;
+        if (!GetToken(token) || token.token != "default")
+            throw; // Expected nothing else than default
+
+        writer_.String("default");
+        writer_.Bool(true);
+    }
+
     writer_.EndObject();
 
     // Skip either the ; or the body of the function
