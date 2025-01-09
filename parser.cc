@@ -1129,8 +1129,8 @@ std::string Parser::ParseTypeNodeDeclarator()
     // Mark that this is not the first time in this loop
     first = false;
 
-    // Match an identifier
-    if (!GetIdentifier(token))
+    // Match an identifier or constant
+    if (!GetIdentifier(token) && !GetConst(token))
       throw; // Expected identifier
 
     declarator += token.token;
